@@ -1,0 +1,6 @@
+{
+  "name": "Dra Alinny vs os germes do mal",
+  "description": "Jogo estilo Vampire Survivors odontológico: ajude a Dra Alinny a combater hordas de bactérias com armas odontológicas, evoluções de escova e fio dental, chefões e sobrevivência infinita!",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
