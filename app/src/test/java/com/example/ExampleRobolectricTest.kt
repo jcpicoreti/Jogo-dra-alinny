@@ -8,6 +8,7 @@ import com.example.data.model.StageId
 import com.example.data.model.WeaponType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -44,5 +45,19 @@ class ExampleRobolectricTest {
   @Test
   fun `verify stages configured`() {
     assertEquals(6, StageId.values().size)
+  }
+
+  @Test
+  fun `verify all 15 fusions have non null base weapons and properties`() {
+    assertEquals(15, EvolutionType.values().size)
+    for (evo in EvolutionType.values()) {
+      assertNotNull("Fusion ${evo.name} baseWeapon must not be null", evo.baseWeapon)
+      assertNotNull("Fusion ${evo.name} requiredPassive must not be null", evo.requiredPassive)
+      assertNotNull(evo.baseWeapon.displayName)
+      assertNotNull(evo.requiredPassive.displayName)
+      assertNotNull(evo.displayName)
+      assertNotNull(evo.description)
+      assertTrue("Unlocked stage should be between 1 and 5", evo.unlockedAtStage in 1..5)
+    }
   }
 }

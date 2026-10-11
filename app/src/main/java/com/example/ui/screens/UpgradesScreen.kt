@@ -151,7 +151,10 @@ fun UpgradeItemCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     val iconStr = when (upgradeType) {
                         ClinicUpgradeType.VITALIDADE_ESMALTE -> "❤️"
                         ClinicUpgradeType.POTENCIA_CLINICA -> "⚡"
@@ -173,7 +176,7 @@ fun UpgradeItemCard(
 
                     Spacer(modifier = Modifier.width(12.dp))
 
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             upgradeType.displayName,
                             fontSize = 16.sp,
@@ -188,6 +191,8 @@ fun UpgradeItemCard(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 // Level Dots
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {

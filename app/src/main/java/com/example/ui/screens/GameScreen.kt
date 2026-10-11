@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -193,7 +194,8 @@ fun GameScreen(viewModel: GameViewModel) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp)
+                .statusBarsPadding()
+                .padding(top = 18.dp, start = 14.dp, end = 14.dp, bottom = 6.dp)
         ) {
             // XP Progress Bar
             val xpFraction = (state.currentXp.toFloat() / state.xpForNextLevel.toFloat()).coerceIn(0f, 1f)
@@ -617,7 +619,7 @@ fun LevelUpChoiceCard(option: LevelUpOption, onClick: () -> Unit) {
                 Text(iconStr, fontSize = 24.sp)
                 Spacer(modifier = Modifier.width(10.dp))
 
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     val title = when (option) {
                         is LevelUpOption.NewWeapon -> "Nova Arma: ${option.weaponType.displayName}"
                         is LevelUpOption.UpgradeWeapon -> "${option.weapon.type.displayName} (Nível ${option.weapon.level + 1})"

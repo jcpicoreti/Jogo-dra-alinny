@@ -12,15 +12,19 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import com.example.data.model.CharacterId
 import com.example.data.model.DamageNumber
+import com.example.data.model.DentalObstacle
+import com.example.data.model.DentalStructure
 import com.example.data.model.EnemyInstance
 import com.example.data.model.EnemyType
 import com.example.data.model.EvolutionType
 import com.example.data.model.GameState
 import com.example.data.model.LootInstance
 import com.example.data.model.LootType
+import com.example.data.model.ObstacleType
 import com.example.data.model.PassiveType
 import com.example.data.model.ProjectileInstance
 import com.example.data.model.StageId
+import com.example.data.model.StructureType
 import com.example.data.model.VisualParticle
 import com.example.data.model.WeaponType
 import com.example.game.GameEngine
@@ -37,7 +41,9 @@ object DentalCanvasRenderer {
         projectiles: List<ProjectileInstance>,
         lootItems: List<LootInstance>,
         damageNumbers: List<DamageNumber>,
-        particles: List<VisualParticle>
+        particles: List<VisualParticle>,
+        obstacles: List<DentalObstacle> = gameState.obstacles,
+        structures: List<DentalStructure> = gameState.structures
     ) {
         val canvasWidth = drawScope.size.width
         val canvasHeight = drawScope.size.height
@@ -51,6 +57,17 @@ object DentalCanvasRenderer {
 
         // 1.2 Draw Stage Boundary Limits (Visible Enamel Barrier Walls & Danger Striping)
         drawStageBoundaries(drawScope, cameraX, cameraY, canvasWidth, canvasHeight, gameState.gameTimeSeconds, gameState.stageId)
+
+        // 1.3 Draw Interactive Clinic Structures (Enterable Dental Rooms & Booths)
+        structures.forEach { struct ->
+            val screenX = struct.x + cameraX
+            val screenY = struct.y + cameraY
+            if (screenX >= -struct.width - 40f && screenX <= canvasWidth + struct.width + 40f &&
+                screenY >= -struct.height - 40f && screenY <= canvasHeight + struct.height + 40f) {
+                val isPlayerInside = gameState.currentStructureInside?.id == struct.id
+                drawStructure(drawScope, struct, screenX, screenY, gameState.gameTimeSeconds, isPlayerInside)
+            }
+        }
 
         // 1.5 Radiant Clean Enamel Halo under player (Lighting ambiance)
         val playerPx = gameState.playerX + cameraX
@@ -72,6 +89,18 @@ object DentalCanvasRenderer {
             val screenY = loot.y + cameraY
             if (screenX >= -60f && screenX <= canvasWidth + 60f && screenY >= -60f && screenY <= canvasHeight + 60f) {
                 drawLootItem(drawScope, loot, screenX, screenY, gameState.gameTimeSeconds)
+            }
+        }
+
+        // 2.5 Draw Dental Obstacles (Physical solid fixtures and destructibles)
+        obstacles.forEach { obs ->
+            if (!obs.isDestroyed) {
+                val screenX = obs.x + cameraX
+                val screenY = obs.y + cameraY
+                if (screenX >= -obs.width - 30f && screenX <= canvasWidth + obs.width + 30f &&
+                    screenY >= -obs.height - 30f && screenY <= canvasHeight + obs.height + 30f) {
+                    drawObstacle(drawScope, obs, screenX, screenY, gameState.gameTimeSeconds)
+                }
             }
         }
 
@@ -151,10 +180,11 @@ object DentalCanvasRenderer {
             }
         }
 
-        // 5. Draw Player Character
+        // 5. Draw Player Character & High-Level Equipment Auras
         val playerScreenX = gameState.playerX + cameraX
         val playerScreenY = gameState.playerY + cameraY
         drawPlayer(drawScope, gameState.characterId, playerScreenX, playerScreenY, gameState.gameTimeSeconds)
+        drawPlayerPassiveAuras(drawScope, gameState.passives, playerScreenX, playerScreenY, gameState.gameTimeSeconds)
 
         // 6. Draw Projectiles & Weapon Effects
         projectiles.forEach { p ->
@@ -1100,6 +1130,87 @@ object DentalCanvasRenderer {
         }
     }
 
+    private fun drawPlayerPassiveAuras(
+        drawScope: DrawScope,
+        passives: List<com.example.data.model.ActivePassive>,
+        px: Float,
+        py: Float,
+        time: Float
+    ) {
+        for (p in passives) {
+            if (p.level < 3) continue
+            val isMax = p.level >= 5
+            when (p.type) {
+                PassiveType.PASTA_FLUOR -> {
+                    val orbitAngle = time * 3.5f
+                    val orbitRad = 36f
+                    val count = if (isMax) 3 else 2
+                    for (i in 0 until count) {
+                        val ang = orbitAngle + (i * Math.PI * 2 / count).toFloat()
+                        val sx = px + cos(ang.toDouble()).toFloat() * orbitRad
+                        val sy = py + sin(ang.toDouble()).toFloat() * orbitRad
+                        drawScope.drawCircle(
+                            color = if (isMax) Color(0xFFFDE047) else Color(0xFF38BDF8),
+                            radius = if (isMax) 5.5f else 4f,
+                            center = Offset(sx, sy)
+                        )
+                        drawScope.drawCircle(
+                            color = Color.White,
+                            radius = 2.5f,
+                            center = Offset(sx, sy)
+                        )
+                    }
+                }
+                PassiveType.SELANTE_FOSSULAS -> {
+                    val pulse = 1f + (sin((time * 5f).toDouble()) * 0.08f).toFloat()
+                    drawScope.drawCircle(
+                        color = Color(0x3306B6D4),
+                        radius = 42f * pulse,
+                        center = Offset(px, py),
+                        style = Stroke(width = if (isMax) 3f else 1.8f)
+                    )
+                }
+                PassiveType.ENXAGUANTE_MENTA -> {
+                    val swirlAng = time * 5f
+                    for (i in 0 until 4) {
+                        val ang = swirlAng + (i * Math.PI / 2).toFloat()
+                        val r = 26f + (sin((time * 3f + i).toDouble()) * 6f).toFloat()
+                        val mx = px + cos(ang.toDouble()).toFloat() * r
+                        val my = py + sin(ang.toDouble()).toFloat() * r * 0.5f + 16f
+                        drawScope.drawCircle(
+                            color = Color(0x8834D399),
+                            radius = 3.5f,
+                            center = Offset(mx, my)
+                        )
+                    }
+                }
+                PassiveType.AVENTAL_CHUMBO -> {
+                    val plateAngle = time * 2.2f
+                    for (i in 0 until 2) {
+                        val ang = plateAngle + i * Math.PI.toFloat()
+                        val lx = px + cos(ang.toDouble()).toFloat() * 44f
+                        val ly = py + sin(ang.toDouble()).toFloat() * 44f
+                        drawScope.drawRoundRect(
+                            color = Color(0xFF64748B),
+                            topLeft = Offset(lx - 5f, ly - 8f),
+                            size = Size(10f, 16f),
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f, 3f)
+                        )
+                    }
+                }
+                PassiveType.RESINA_COMPOSTA -> {
+                    drawScope.drawOval(
+                        color = Color(0x55F59E0B),
+                        topLeft = Offset(px - 34f, py - 34f),
+                        size = Size(68f, 68f),
+                        style = Stroke(width = 2f)
+                    )
+                }
+                else -> {}
+            }
+        }
+    }
+
     private fun drawProjectile(
         drawScope: DrawScope,
         p: ProjectileInstance,
@@ -1107,6 +1218,37 @@ object DentalCanvasRenderer {
         y: Float,
         time: Float
     ) {
+        // Visual enhancements by level & evolution!
+        if (p.isEvolved) {
+            val pulseRad = p.radius * 1.5f + (sin((time * 12f).toDouble()) * 4f).toFloat()
+            drawScope.drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color(0x88FDE047), Color(0x4400F0FF), Color.Transparent),
+                    center = Offset(x, y),
+                    radius = pulseRad
+                ),
+                radius = pulseRad,
+                center = Offset(x, y)
+            )
+        } else if (p.level >= 5) {
+            val maxPulse = p.radius * 1.35f
+            drawScope.drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color(0x66F59E0B), Color(0x22FBBF24), Color.Transparent),
+                    center = Offset(x, y),
+                    radius = maxPulse
+                ),
+                radius = maxPulse,
+                center = Offset(x, y)
+            )
+        } else if (p.level >= 3) {
+            drawScope.drawCircle(
+                color = Color(0x3338BDF8),
+                radius = p.radius * 1.25f,
+                center = Offset(x, y)
+            )
+        }
+
         when {
             p.isLaser -> {
                 // Laser beam: Titanium Floss or UV curing light
@@ -1412,4 +1554,560 @@ object DentalCanvasRenderer {
             }
         }
     }
+
+    private fun drawStructure(
+        drawScope: DrawScope,
+        struct: DentalStructure,
+        x: Float,
+        y: Float,
+        time: Float,
+        isPlayerInside: Boolean
+    ) {
+        val w = struct.width
+        val h = struct.height
+        val pulse = (sin((time * 4f).toDouble()) * 0.15f + 0.85f).toFloat()
+
+        // 1. Room Floor Shadow
+        drawScope.drawRoundRect(
+            color = Color(0x55000000),
+            topLeft = Offset(x - w / 2f + 5f, y - h / 2f + 8f),
+            size = Size(w, h),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(16f, 16f)
+        )
+
+        // 2. Interior Clinic Floor
+        val baseFloorColor = when (struct.type) {
+            StructureType.CONSULTORIO_CABINE -> if (isPlayerInside) Color(0x6610B981) else Color(0x330284C7)
+            StructureType.SALA_ESTERILIZACAO -> if (isPlayerInside) Color(0x667C3AED) else Color(0x334338CA)
+            StructureType.ARMARIO_INSUMOS -> if (isPlayerInside) Color(0x66F59E0B) else Color(0x33D97706)
+            StructureType.CABINE_RAIO_X -> if (isPlayerInside) Color(0x660D9488) else Color(0x33334155)
+            StructureType.LABORATORIO_PROTESE -> if (isPlayerInside) Color(0x66E11D48) else Color(0x339F1239)
+        }
+        drawScope.drawRoundRect(
+            color = baseFloorColor,
+            topLeft = Offset(x - w / 2f, y - h / 2f),
+            size = Size(w, h),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(14f, 14f)
+        )
+
+        // 3. Clinical Ceramic Tile Grid Pattern
+        val tileSize = 28f
+        var tx = x - w / 2f + 14f
+        while (tx < x + w / 2f - 14f) {
+            drawScope.drawLine(
+                color = Color(0x22FFFFFF),
+                start = Offset(tx, y - h / 2f + 14f),
+                end = Offset(tx, y + h / 2f - 14f),
+                strokeWidth = 1f
+            )
+            tx += tileSize
+        }
+        var ty = y - h / 2f + 14f
+        while (ty < y + h / 2f - 14f) {
+            drawScope.drawLine(
+                color = Color(0x22FFFFFF),
+                start = Offset(x - w / 2f + 14f, ty),
+                end = Offset(x + w / 2f - 14f, ty),
+                strokeWidth = 1f
+            )
+            ty += tileSize
+        }
+
+        // 4. Room Themed Graphics & Apparatus
+        when (struct.type) {
+            StructureType.CONSULTORIO_CABINE -> {
+                // Large White & Green Medical Cross
+                drawScope.drawRect(color = Color(0xAAFFFFFF), topLeft = Offset(x - 10f, y - 26f), size = Size(20f, 52f))
+                drawScope.drawRect(color = Color(0xAAFFFFFF), topLeft = Offset(x - 26f, y - 10f), size = Size(52f, 20f))
+                drawScope.drawRect(color = Color(0xFF10B981), topLeft = Offset(x - 7f, y - 23f), size = Size(14f, 46f))
+                drawScope.drawRect(color = Color(0xFF10B981), topLeft = Offset(x - 23f, y - 7f), size = Size(46f, 14f))
+
+                // Examination Desk / Cabinet outline
+                drawScope.drawRoundRect(
+                    color = Color(0x66CBD5E1),
+                    topLeft = Offset(x - w * 0.4f, y - h * 0.38f),
+                    size = Size(w * 0.28f, h * 0.22f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+                )
+            }
+            StructureType.SALA_ESTERILIZACAO -> {
+                // UV waves & Radiation Ring
+                drawScope.drawCircle(
+                    color = Color(0x44C084FC).copy(alpha = pulse * 0.5f),
+                    radius = w * 0.32f,
+                    center = Offset(x, y),
+                    style = Stroke(width = 3f)
+                )
+                drawScope.drawCircle(
+                    color = Color(0x88A855F7),
+                    radius = 24f,
+                    center = Offset(x, y)
+                )
+                // Biohazard clean ring
+                drawScope.drawCircle(
+                    color = Color(0xFFE9D5FF),
+                    radius = 12f,
+                    center = Offset(x, y)
+                )
+            }
+            StructureType.ARMARIO_INSUMOS -> {
+                // Gold coin / Magnet Vault Center
+                drawScope.drawCircle(color = Color(0xAAFBBF24), radius = 22f, center = Offset(x, y))
+                drawScope.drawCircle(color = Color(0xAAFFFFFF), radius = 10f, center = Offset(x - 4f, y - 4f))
+                // Supply shelves outline on sides
+                drawScope.drawRect(color = Color(0x55F59E0B), topLeft = Offset(x - w * 0.42f, y - h * 0.35f), size = Size(18f, h * 0.7f))
+                drawScope.drawRect(color = Color(0x55F59E0B), topLeft = Offset(x + w * 0.42f - 18f, y - h * 0.35f), size = Size(18f, h * 0.7f))
+            }
+            StructureType.CABINE_RAIO_X -> {
+                // Radiation Warning Trefoil Emblem
+                drawScope.drawCircle(color = Color(0xFFFDE047), radius = 22f, center = Offset(x, y))
+                drawScope.drawCircle(color = Color(0xFF0F172A), radius = 8f, center = Offset(x, y))
+                for (i in 0 until 3) {
+                    val angleRad = Math.toRadians((i * 120.0 + time * 30.0)).toFloat()
+                    val bx = x + cos(angleRad) * 14f
+                    val by = y + sin(angleRad) * 14f
+                    drawScope.drawCircle(color = Color(0xFF0F172A), radius = 6f, center = Offset(bx, by))
+                }
+            }
+            StructureType.LABORATORIO_PROTESE -> {
+                // Prosthetic gear and tooth lathe workbench
+                drawScope.drawCircle(
+                    color = Color(0xFFFDA4AF),
+                    radius = 20f,
+                    center = Offset(x, y),
+                    style = Stroke(width = 4f)
+                )
+                drawScope.drawCircle(color = Color(0xFFBE123C), radius = 10f, center = Offset(x, y))
+                drawScope.drawRoundRect(
+                    color = Color(0x88FFFFFF),
+                    topLeft = Offset(x - 12f, y - 12f),
+                    size = Size(24f, 24f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+                )
+            }
+        }
+
+        // 5. Exterior Clinical Walls with Doorway Opening
+        val wallColor = Color(struct.type.colorHex)
+        val wt = 14f
+        val dw = 62f
+        val hw = w / 2f
+        val hh = h / 2f
+
+        // Left Wall
+        drawScope.drawRoundRect(
+            color = wallColor,
+            topLeft = Offset(x - hw, y - hh),
+            size = Size(wt, h),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+        )
+        // Right Wall
+        drawScope.drawRoundRect(
+            color = wallColor,
+            topLeft = Offset(x + hw - wt, y - hh),
+            size = Size(wt, h),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+        )
+
+        // Top Wall
+        if (struct.doorDirection == "TOP") {
+            val segW = (hw - dw / 2f).coerceAtLeast(10f)
+            drawScope.drawRoundRect(
+                color = wallColor,
+                topLeft = Offset(x - hw, y - hh),
+                size = Size(segW, wt),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+            )
+            drawScope.drawRoundRect(
+                color = wallColor,
+                topLeft = Offset(x + dw / 2f, y - hh),
+                size = Size(segW, wt),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+            )
+            // Door Entrance Threshold Mat (TOP)
+            drawScope.drawRoundRect(
+                color = Color(0xCC38BDF8),
+                topLeft = Offset(x - dw / 2f + 4f, y - hh),
+                size = Size(dw - 8f, wt),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+            )
+            // Glowing Entrance Indicator Arrow
+            drawScope.drawCircle(color = Color(0xFFFDE047), radius = 6f * pulse, center = Offset(x, y - hh + wt / 2f))
+        } else {
+            drawScope.drawRoundRect(
+                color = wallColor,
+                topLeft = Offset(x - hw, y - hh),
+                size = Size(w, wt),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+            )
+        }
+
+        // Bottom Wall
+        if (struct.doorDirection == "BOTTOM") {
+            val segW = (hw - dw / 2f).coerceAtLeast(10f)
+            drawScope.drawRoundRect(
+                color = wallColor,
+                topLeft = Offset(x - hw, y + hh - wt),
+                size = Size(segW, wt),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+            )
+            drawScope.drawRoundRect(
+                color = wallColor,
+                topLeft = Offset(x + dw / 2f, y + hh - wt),
+                size = Size(segW, wt),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+            )
+            // Door Entrance Threshold Mat (BOTTOM)
+            drawScope.drawRoundRect(
+                color = Color(0xCC34D399),
+                topLeft = Offset(x - dw / 2f + 4f, y + hh - wt),
+                size = Size(dw - 8f, wt),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+            )
+            // Glowing Entrance Indicator Arrow
+            drawScope.drawCircle(color = Color(0xFFFDE047), radius = 6f * pulse, center = Offset(x, y + hh - wt / 2f))
+        } else {
+            drawScope.drawRoundRect(
+                color = wallColor,
+                topLeft = Offset(x - hw, y + hh - wt),
+                size = Size(w, wt),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+            )
+        }
+
+        // 6. Overhead Room Badge / Sign
+        val badgeW = (w * 0.75f).coerceAtMost(150f)
+        val badgeH = 18f
+        val badgeY = y - hh - 12f
+        drawScope.drawRoundRect(
+            color = Color(0xDD0F172A),
+            topLeft = Offset(x - badgeW / 2f, badgeY),
+            size = Size(badgeW, badgeH),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(9f, 9f)
+        )
+        drawScope.drawRoundRect(
+            color = wallColor.copy(alpha = pulse),
+            topLeft = Offset(x - badgeW / 2f, badgeY),
+            size = Size(badgeW, badgeH),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(9f, 9f),
+            style = Stroke(width = 1.5f)
+        )
+        // Icon dot on badge
+        drawScope.drawCircle(color = wallColor, radius = 4f, center = Offset(x - badgeW / 2f + 10f, badgeY + badgeH / 2f))
+
+        // 7. Interior Active Effect when Player is Inside
+        if (isPlayerInside) {
+            drawScope.drawRoundRect(
+                color = Color(0x33FFFFFF).copy(alpha = (sin(time * 6.0) * 0.15 + 0.25).toFloat()),
+                topLeft = Offset(x - hw + wt, y - hh + wt),
+                size = Size(w - wt * 2f, h - wt * 2f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+            )
+        }
+    }
+
+    private fun drawObstacle(
+        drawScope: DrawScope,
+        obs: DentalObstacle,
+        x: Float,
+        y: Float,
+        time: Float
+    ) {
+        val w = obs.width
+        val h = obs.height
+        val isHit = obs.flashHitTimer > 0f
+        val baseColor = if (isHit) Color.White else Color(obs.type.colorHex)
+
+        when (obs.type) {
+            ObstacleType.DENTE_MOLAR_GIGANTE -> {
+                // Giant Enamel Molar Tooth (3D solid monument)
+                drawScope.drawCircle(color = Color(0x55000000), radius = w * 0.55f, center = Offset(x, y + 8f)) // shadow
+                // Enamel crown lobes
+                drawScope.drawRoundRect(
+                    color = baseColor,
+                    topLeft = Offset(x - w / 2f, y - h / 2f),
+                    size = Size(w, h * 0.75f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(16f, 16f)
+                )
+                // Gloss highlight on enamel crown
+                drawScope.drawOval(
+                    color = Color(0x88BAE6FD),
+                    topLeft = Offset(x - w * 0.35f, y - h * 0.45f),
+                    size = Size(w * 0.7f, h * 0.25f)
+                )
+                // Roots (two distinct roots)
+                drawScope.drawRoundRect(
+                    color = if (isHit) Color.White else Color(0xFFE2E8F0),
+                    topLeft = Offset(x - w * 0.4f, y + h * 0.1f),
+                    size = Size(w * 0.35f, h * 0.45f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                )
+                drawScope.drawRoundRect(
+                    color = if (isHit) Color.White else Color(0xFFE2E8F0),
+                    topLeft = Offset(x + w * 0.05f, y + h * 0.1f),
+                    size = Size(w * 0.35f, h * 0.45f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                )
+            }
+
+            ObstacleType.CADEIRA_ODONTO -> {
+                // Dental Chair
+                drawScope.drawRoundRect(
+                    color = Color(0x44000000),
+                    topLeft = Offset(x - w / 2f + 4f, y - h / 2f + 8f),
+                    size = Size(w, h),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(10f, 10f)
+                )
+                // Reclined seat
+                drawScope.drawRoundRect(
+                    color = baseColor,
+                    topLeft = Offset(x - w / 2f, y - h / 2f),
+                    size = Size(w * 0.7f, h),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+                )
+                // Headrest
+                drawScope.drawRoundRect(
+                    color = if (isHit) Color.White else Color(0xFF0369A1),
+                    topLeft = Offset(x + w * 0.18f, y - h * 0.35f),
+                    size = Size(w * 0.32f, h * 0.7f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                )
+                // Dentist foot pedal
+                drawScope.drawCircle(color = Color(0xFF475569), radius = 6f, center = Offset(x - w * 0.2f, y + h * 0.45f))
+            }
+
+            ObstacleType.EQUIPO_CLINICO -> {
+                // Clinical instrument tray / equipo
+                drawScope.drawRoundRect(
+                    color = baseColor,
+                    topLeft = Offset(x - w / 2f, y - h / 2f),
+                    size = Size(w, h),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                )
+                // Chrome tray
+                drawScope.drawRect(
+                    color = if (isHit) Color.White else Color(0xFFCBD5E1),
+                    topLeft = Offset(x - w * 0.4f, y - h * 0.4f),
+                    size = Size(w * 0.8f, h * 0.8f)
+                )
+                // Instrument handpieces on holder
+                drawScope.drawLine(color = Color(0xFF0284C7), start = Offset(x - w * 0.3f, y - h * 0.2f), end = Offset(x - w * 0.1f, y + h * 0.3f), strokeWidth = 3f)
+                drawScope.drawLine(color = Color(0xFF10B981), start = Offset(x, y - h * 0.2f), end = Offset(x + w * 0.2f, y + h * 0.3f), strokeWidth = 3f)
+            }
+
+            ObstacleType.REATOR_AUTOCLAVE -> {
+                // Autoclave steam sterilizer
+                drawScope.drawRoundRect(
+                    color = baseColor,
+                    topLeft = Offset(x - w / 2f, y - h / 2f),
+                    size = Size(w, h),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(10f, 10f)
+                )
+                // Round steam hatch
+                drawScope.drawCircle(color = Color(0xFF94A3B8), radius = h * 0.35f, center = Offset(x, y))
+                drawScope.drawCircle(color = Color(0xFF38BDF8), radius = h * 0.2f, center = Offset(x, y))
+                // Temperature gauge
+                drawScope.drawCircle(color = Color(0xFFE2E8F0), radius = 6f, center = Offset(x + w * 0.3f, y - h * 0.25f))
+            }
+
+            ObstacleType.REFLETOR_ODONTO -> {
+                // Clinical LED Surgical Lamp with articulated pantograph arm
+                drawScope.drawCircle(color = Color(0x44000000), radius = 16f, center = Offset(x, y + 6f))
+                // Floor base
+                drawScope.drawCircle(color = Color(0xFF475569), radius = 14f, center = Offset(x, y))
+                // Pantograph Arm
+                drawScope.drawLine(color = Color(0xFF94A3B8), start = Offset(x, y), end = Offset(x + 10f, y - 18f), strokeWidth = 3.5f)
+                drawScope.drawLine(color = Color(0xFF94A3B8), start = Offset(x + 10f, y - 18f), end = Offset(x - 5f, y - 26f), strokeWidth = 3f)
+                // Multi-LED Lamp Head
+                drawScope.drawRoundRect(
+                    color = if (isHit) Color.White else Color(0xFFFDE047),
+                    topLeft = Offset(x - 16f, y - 36f),
+                    size = Size(32f, 14f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                )
+                // Glowing soft light beam cone
+                drawScope.drawCircle(
+                    color = Color(0x44FDE047),
+                    radius = 24f,
+                    center = Offset(x, y - 29f)
+                )
+            }
+
+            ObstacleType.RAIO_X_COLUNA -> {
+                // Periapical X-Ray column machine
+                drawScope.drawCircle(color = Color(0x44000000), radius = 18f, center = Offset(x, y + 8f))
+                // Heavy lead base with warning stripes
+                drawScope.drawRoundRect(
+                    color = baseColor,
+                    topLeft = Offset(x - w / 2f, y - h / 2f + 10f),
+                    size = Size(w, h - 10f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+                )
+                // Collimator tube head
+                drawScope.drawRoundRect(
+                    color = if (isHit) Color.White else Color(0xFF334155),
+                    topLeft = Offset(x - 12f, y - h / 2f - 4f),
+                    size = Size(24f, 18f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+                )
+                // Radiation cone
+                drawScope.drawCircle(color = Color(0xFFFDE047), radius = 5f, center = Offset(x, y - h / 2f + 5f))
+            }
+
+            ObstacleType.BRAQUETE_TITANIO -> {
+                // Giant Orthodontic Titanium Bracket
+                drawScope.drawCircle(color = Color(0x44000000), radius = w * 0.5f, center = Offset(x, y + 6f))
+                // Metallic bracket body
+                drawScope.drawRoundRect(
+                    color = baseColor,
+                    topLeft = Offset(x - w / 2f, y - h / 2f),
+                    size = Size(w, h),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+                )
+                // Archwire slot
+                drawScope.drawRect(
+                    color = Color(0xFF0F172A),
+                    topLeft = Offset(x - w / 2f, y - 4f),
+                    size = Size(w, 8f)
+                )
+                // Orthodontic archwire (shiny silver)
+                drawScope.drawLine(
+                    color = Color(0xFFF8FAFC),
+                    start = Offset(x - w / 2f, y),
+                    end = Offset(x + w / 2f, y),
+                    strokeWidth = 4f
+                )
+                // Elastic module tie (colored rubber band)
+                drawScope.drawRoundRect(
+                    color = Color(0xFF06B6D4),
+                    topLeft = Offset(x - w * 0.35f, y - h * 0.35f),
+                    size = Size(w * 0.7f, h * 0.7f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f),
+                    style = Stroke(width = 3f)
+                )
+            }
+
+            ObstacleType.BLOCO_TARTARO -> {
+                // Rock calculus tartar block (cracked & destructible)
+                drawScope.drawRoundRect(
+                    color = baseColor,
+                    topLeft = Offset(x - w / 2f, y - h / 2f),
+                    size = Size(w, h),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+                )
+                // Cracks
+                drawScope.drawLine(color = Color(0xFF44403C), start = Offset(x - w * 0.3f, y - h * 0.3f), end = Offset(x + w * 0.2f, y + h * 0.2f), strokeWidth = 2.5f)
+                drawScope.drawLine(color = Color(0xFF44403C), start = Offset(x + w * 0.1f, y - h * 0.2f), end = Offset(x + w * 0.35f, y + h * 0.1f), strokeWidth = 2f)
+            }
+
+            ObstacleType.FRASCO_FLUOR -> {
+                // Bottle of Fluoride (destructible)
+                drawScope.drawRoundRect(
+                    color = baseColor,
+                    topLeft = Offset(x - w / 2f, y - h / 2f + 6f),
+                    size = Size(w, h - 6f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+                )
+                // Cap
+                drawScope.drawRect(
+                    color = if (isHit) Color.White else Color(0xFF0284C7),
+                    topLeft = Offset(x - w * 0.25f, y - h / 2f),
+                    size = Size(w * 0.5f, 7f)
+                )
+                // Fluoride drop label
+                drawScope.drawCircle(color = Color.White, radius = 5f, center = Offset(x, y + 3f))
+                drawScope.drawCircle(color = Color(0xFF0284C7), radius = 3f, center = Offset(x, y + 3f))
+            }
+
+            ObstacleType.CAIXA_GAZE -> {
+                // Sterile Gauze box (destructible)
+                drawScope.drawRoundRect(
+                    color = baseColor,
+                    topLeft = Offset(x - w / 2f, y - h / 2f),
+                    size = Size(w, h),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                )
+                // Red medical cross
+                drawScope.drawRect(color = Color(0xFFEF4444), topLeft = Offset(x - 3f, y - 9f), size = Size(6f, 18f))
+                drawScope.drawRect(color = Color(0xFFEF4444), topLeft = Offset(x - 9f, y - 3f), size = Size(18f, 6f))
+            }
+
+            ObstacleType.ESTOJO_INSTRUMENTAL -> {
+                // Golden instrumental tray (destructible)
+                drawScope.drawRoundRect(
+                    color = baseColor,
+                    topLeft = Offset(x - w / 2f, y - h / 2f),
+                    size = Size(w, h),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                )
+                drawScope.drawRoundRect(
+                    color = Color(0xFFFDE047),
+                    topLeft = Offset(x - w * 0.35f, y - h * 0.3f),
+                    size = Size(w * 0.7f, h * 0.6f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f, 3f)
+                )
+            }
+
+            ObstacleType.TUBO_PASTA_DENTE -> {
+                // Toothpaste Tube (destructible)
+                drawScope.drawRoundRect(
+                    color = baseColor,
+                    topLeft = Offset(x - w / 2f, y - h / 2f),
+                    size = Size(w * 0.8f, h),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                )
+                // Cap
+                drawScope.drawRect(
+                    color = if (isHit) Color.White else Color(0xFF0369A1),
+                    topLeft = Offset(x + w * 0.3f, y - h * 0.3f),
+                    size = Size(w * 0.2f, h * 0.6f)
+                )
+                // Aqua fresh stripe
+                drawScope.drawRect(
+                    color = Color(0xFF38BDF8),
+                    topLeft = Offset(x - w * 0.35f, y - 2f),
+                    size = Size(w * 0.6f, 4f)
+                )
+            }
+
+            ObstacleType.AMPOULA_ANESTESICO -> {
+                // Dental Anesthetic Carpule vial (destructible)
+                drawScope.drawRoundRect(
+                    color = if (isHit) Color.White else Color(0xFFE2E8F0),
+                    topLeft = Offset(x - w / 2f, y - h / 2f),
+                    size = Size(w, h),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                )
+                // Purple anesthetic liquid column
+                drawScope.drawRoundRect(
+                    color = Color(0xFFA855F7),
+                    topLeft = Offset(x - w * 0.35f, y - h * 0.35f),
+                    size = Size(w * 0.7f, h * 0.7f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+                )
+                // Rubber stopper plunger
+                drawScope.drawRect(
+                    color = Color(0xFF475569),
+                    topLeft = Offset(x - w / 2f, y - h * 0.2f),
+                    size = Size(5f, h * 0.4f)
+                )
+                // Silver cap
+                drawScope.drawRect(
+                    color = Color(0xFF94A3B8),
+                    topLeft = Offset(x + w / 2f - 5f, y - h * 0.25f),
+                    size = Size(5f, h * 0.5f)
+                )
+            }
+        }
+
+        // Draw Health Bar for damaged destructible obstacles
+        if (obs.type.isDestructible && obs.hp < obs.type.maxHp) {
+            val barW = w * 0.9f
+            val barH = 4f
+            val frac = (obs.hp / obs.type.maxHp).coerceIn(0f, 1f)
+            drawScope.drawRect(color = Color(0x88000000), topLeft = Offset(x - barW / 2f, y - h / 2f - 8f), size = Size(barW, barH))
+            drawScope.drawRect(color = Color(0xFF10B981), topLeft = Offset(x - barW / 2f, y - h / 2f - 8f), size = Size(barW * frac, barH))
+        }
+    }
 }
+

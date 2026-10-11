@@ -28,6 +28,9 @@ import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.viewmodel.GameViewModel
 import com.example.ui.viewmodel.Screen
 
+import androidx.compose.foundation.layout.Box
+import com.example.ui.components.NotificationPopupOverlay
+
 class MainActivity : ComponentActivity() {
 
     private val viewModel: GameViewModel by viewModels()
@@ -65,32 +68,42 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation(viewModel: GameViewModel) {
     val currentScreen by viewModel.currentScreen.collectAsState()
+    val activePopup by viewModel.activePopup.collectAsState()
 
-    when (val screen = currentScreen) {
-        is Screen.Splash -> SplashScreen(viewModel = viewModel)
-        is Screen.Menu -> MainMenuScreen(viewModel = viewModel)
-        is Screen.CharacterSelect -> CharacterSelectScreen(viewModel = viewModel)
-        is Screen.StageSelect -> StageSelectScreen(viewModel = viewModel)
-        is Screen.Gameplay -> GameScreen(viewModel = viewModel)
-        is Screen.GameOver -> MatchEndScreen(
-            isVictory = false,
-            kills = screen.kills,
-            timeSec = screen.timeSec,
-            coins = screen.coins,
-            level = screen.level,
-            viewModel = viewModel
-        )
-        is Screen.Victory -> MatchEndScreen(
-            isVictory = true,
-            kills = screen.kills,
-            timeSec = screen.timeSec,
-            coins = screen.coins,
-            level = screen.level,
-            viewModel = viewModel
-        )
-        is Screen.Rankings -> RankingScreen(viewModel = viewModel)
-        is Screen.Achievements -> AchievementsScreen(viewModel = viewModel)
-        is Screen.Upgrades -> UpgradesScreen(viewModel = viewModel)
-        is Screen.Library -> LibraryScreen(viewModel = viewModel)
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (val screen = currentScreen) {
+            is Screen.Splash -> SplashScreen(viewModel = viewModel)
+            is Screen.Menu -> MainMenuScreen(viewModel = viewModel)
+            is Screen.CharacterSelect -> CharacterSelectScreen(viewModel = viewModel)
+            is Screen.StageSelect -> StageSelectScreen(viewModel = viewModel)
+            is Screen.Gameplay -> GameScreen(viewModel = viewModel)
+            is Screen.GameOver -> MatchEndScreen(
+                isVictory = false,
+                kills = screen.kills,
+                timeSec = screen.timeSec,
+                coins = screen.coins,
+                level = screen.level,
+                viewModel = viewModel
+            )
+            is Screen.Victory -> MatchEndScreen(
+                isVictory = true,
+                kills = screen.kills,
+                timeSec = screen.timeSec,
+                coins = screen.coins,
+                level = screen.level,
+                viewModel = viewModel
+            )
+            is Screen.Rankings -> RankingScreen(viewModel = viewModel)
+            is Screen.Achievements -> AchievementsScreen(viewModel = viewModel)
+            is Screen.Upgrades -> UpgradesScreen(viewModel = viewModel)
+            is Screen.Library -> LibraryScreen(viewModel = viewModel)
+        }
+
+        activePopup?.let { popup ->
+            NotificationPopupOverlay(
+                popup = popup,
+                onDismiss = { viewModel.dismissPopup() }
+            )
+        }
     }
 }

@@ -15,14 +15,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,10 +31,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -71,8 +66,6 @@ fun LibraryScreen(viewModel: GameViewModel) {
         viewModel.navigateTo(Screen.Menu)
     }
 
-    val meta by viewModel.playerMeta.collectAsState()
-    val highestUnlocked = meta?.highestStageUnlocked ?: 1
     val discoveredList by viewModel.discoveredItems.collectAsState()
     val discoveredMap = remember(discoveredList) {
         discoveredList.associateBy({ it.itemId }, { it.timesUsed })
@@ -105,7 +98,8 @@ fun LibraryScreen(viewModel: GameViewModel) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 16.dp)
+                .statusBarsPadding()
+                .padding(top = 18.dp, bottom = 8.dp)
         ) {
             // Header
             Row(
@@ -143,7 +137,7 @@ fun LibraryScreen(viewModel: GameViewModel) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Overall Discovery Progress Card
             Surface(
@@ -225,6 +219,7 @@ fun LibraryScreen(viewModel: GameViewModel) {
                             .weight(1f)
                             .height(42.dp)
                             .clip(RoundedCornerShape(12.dp))
+                            .testTag("tab_${tab.name.lowercase()}")
                             .clickable { selectedTab = index },
                         shape = RoundedCornerShape(12.dp),
                         color = if (isSelected) Color(0xFF0284C7) else Color(0x221E293B),
@@ -273,8 +268,7 @@ fun LibraryScreen(viewModel: GameViewModel) {
                             WeaponLibraryCard(
                                 weapon = weapon,
                                 isDiscovered = isDiscovered,
-                                timesUsed = times,
-                                highestUnlocked = highestUnlocked
+                                timesUsed = times
                             )
                         }
                     }
@@ -297,8 +291,7 @@ fun LibraryScreen(viewModel: GameViewModel) {
                             PassiveLibraryCard(
                                 passive = passive,
                                 isDiscovered = isDiscovered,
-                                timesUsed = times,
-                                highestUnlocked = highestUnlocked
+                                timesUsed = times
                             )
                         }
                     }
@@ -321,8 +314,7 @@ fun LibraryScreen(viewModel: GameViewModel) {
                             FusionLibraryCard(
                                 evolution = evo,
                                 isDiscovered = isDiscovered,
-                                timesUsed = times,
-                                highestUnlocked = highestUnlocked
+                                timesUsed = times
                             )
                         }
                     }
@@ -332,40 +324,20 @@ fun LibraryScreen(viewModel: GameViewModel) {
     }
 }
 
-private fun stageTitleForNumber(stageNum: Int): String {
-    return when (stageNum) {
-        1 -> "Fase 1 (Superfície do Esmalte)"
-        2 -> "Fase 2 (Sulco Gengival)"
-        3 -> "Fase 3 (Canal Radicular)"
-        4 -> "Fase 4 (Arena dos Braquetes)"
-        5 -> "Fase 5 (Cidadela do Tártaro)"
-        else -> "Fase $stageNum"
-    }
-}
-
 @Composable
-fun WeaponLibraryCard(weapon: WeaponType, isDiscovered: Boolean, timesUsed: Int, highestUnlocked: Int) {
-    val isStageUnlocked = weapon.unlockedAtStage <= highestUnlocked
-
+fun WeaponLibraryCard(weapon: WeaponType, isDiscovered: Boolean, timesUsed: Int) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .testTag("weapon_card_${weapon.name}")
             .border(
                 1.dp,
-                when {
-                    isDiscovered -> Color(0x4438BDF8)
-                    isStageUnlocked -> Color(0x330284C7)
-                    else -> Color(0x15FFFFFF)
-                },
+                if (isDiscovered) Color(0x4438BDF8) else Color(0x2238BDF8),
                 RoundedCornerShape(14.dp)
             ),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = when {
-                isDiscovered -> Color(0xFF1E293B)
-                isStageUnlocked -> Color(0xFF141C2E)
-                else -> Color(0xFF0B1120)
-            }
+            containerColor = if (isDiscovered) Color(0xFF1E293B) else Color(0xFF141C2E)
         )
     ) {
         Row(
@@ -378,66 +350,42 @@ fun WeaponLibraryCard(weapon: WeaponType, isDiscovered: Boolean, timesUsed: Int,
             Surface(
                 modifier = Modifier.size(52.dp),
                 shape = RoundedCornerShape(12.dp),
-                color = when {
-                    isDiscovered -> Color(0x330284C7)
-                    isStageUnlocked -> Color(0x220284C7)
-                    else -> Color(0x15FFFFFF)
-                }
+                color = if (isDiscovered) Color(0x330284C7) else Color(0x1F0284C7)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    if (isDiscovered) {
-                        val iconEmoji = when (weapon) {
-                            WeaponType.ESCOVA_DENTE -> "🪥"
-                            WeaponType.FIO_DENTAL -> "🧵"
-                            WeaponType.JATO_BICARBONATO -> "💧"
-                            WeaponType.BROCA_ODONTO -> "🔩"
-                            WeaponType.ENXAGUANTE_AURA -> "🧴"
-                            WeaponType.LUZ_FOTOPOLIMERIZADORA -> "🔦"
-                            WeaponType.PASTA_EXPLOSIVA -> "💣"
-                            WeaponType.ESPELHO_CLINICO -> "🪞"
-                            WeaponType.SERINGA_ANESTESICA -> "💉"
-                            WeaponType.SUGADOR_SALIVA -> "🌪️"
-                            WeaponType.CURETA_GRACEY -> "🗡️"
-                            WeaponType.SPRAY_CLOREXIDINA -> "💨"
-                            WeaponType.FITA_EXPANSIVA -> "🎗️"
-                            WeaponType.ULTRASSOM_ODONTO -> "🔊"
-                            WeaponType.PINCA_CIRURGICA -> "🦀"
-                        }
-                        Text(iconEmoji, fontSize = 26.sp)
-                    } else {
-                        Icon(
-                            Icons.Default.Lock,
-                            contentDescription = "Bloqueado",
-                            tint = if (isStageUnlocked) Color(0xFF38BDF8) else Color(0xFF64748B),
-                            modifier = Modifier.size(24.dp)
-                        )
+                    val iconEmoji = when (weapon) {
+                        WeaponType.ESCOVA_DENTE -> "🪥"
+                        WeaponType.FIO_DENTAL -> "🧵"
+                        WeaponType.JATO_BICARBONATO -> "💧"
+                        WeaponType.BROCA_ODONTO -> "🔩"
+                        WeaponType.ENXAGUANTE_AURA -> "🧴"
+                        WeaponType.LUZ_FOTOPOLIMERIZADORA -> "🔦"
+                        WeaponType.PASTA_EXPLOSIVA -> "💣"
+                        WeaponType.ESPELHO_CLINICO -> "🪞"
+                        WeaponType.SERINGA_ANESTESICA -> "💉"
+                        WeaponType.SUGADOR_SALIVA -> "🌪️"
+                        WeaponType.CURETA_GRACEY -> "🗡️"
+                        WeaponType.SPRAY_CLOREXIDINA -> "💨"
+                        WeaponType.FITA_EXPANSIVA -> "🎗️"
+                        WeaponType.ULTRASSOM_ODONTO -> "🔊"
+                        WeaponType.PINCA_CIRURGICA -> "🦀"
                     }
+                    Text(iconEmoji, fontSize = 26.sp)
                 }
             }
 
             Spacer(modifier = Modifier.width(14.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                if (isDiscovered) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(weapon.displayName, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = Color(0x3338BDF8)
-                            ) {
-                                Text(
-                                    "Fase ${weapon.unlockedAtStage}",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF7DD3FC),
-                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                                )
-                            }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(weapon.displayName, modifier = Modifier.weight(1f, fill = false), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        if (isDiscovered) {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
                                 color = Color(0x330284C7)
@@ -450,88 +398,47 @@ fun WeaponLibraryCard(weapon: WeaponType, isDiscovered: Boolean, timesUsed: Int,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
+                        } else {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0x2238BDF8)
+                            ) {
+                                Text(
+                                    "Equipamento Clínico",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF7DD3FC),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
                         }
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(weapon.description, fontSize = 12.sp, color = Color(0xFFCBD5E1), lineHeight = 16.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(weapon.description, fontSize = 12.sp, color = Color(0xFFCBD5E1), lineHeight = 16.sp)
 
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("💥 Dano: ${weapon.baseDamage.toInt()}", fontSize = 11.sp, color = Color(0xFFFDE047), fontWeight = FontWeight.SemiBold)
+                    Text("⏱️ Recarga: ${weapon.cooldownSeconds}s", fontSize = 11.sp, color = Color(0xFF86EFAC), fontWeight = FontWeight.SemiBold)
+                    Text("🎯 Nível Máx: ${weapon.maxLevel}", fontSize = 11.sp, color = Color(0xFF93C5FD), fontWeight = FontWeight.SemiBold)
+                }
+
+                if (weapon.evolvedWeapon != null && weapon.evolutionItem != null) {
                     Spacer(modifier = Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("💥 Dano: ${weapon.baseDamage.toInt()}", fontSize = 11.sp, color = Color(0xFFFDE047), fontWeight = FontWeight.SemiBold)
-                        Text("⏱️ Recarga: ${weapon.cooldownSeconds}s", fontSize = 11.sp, color = Color(0xFF86EFAC), fontWeight = FontWeight.SemiBold)
-                        Text("🎯 Nível Máx: ${weapon.maxLevel}", fontSize = 11.sp, color = Color(0xFF93C5FD), fontWeight = FontWeight.SemiBold)
-                    }
-
-                    if (weapon.evolvedWeapon != null && weapon.evolutionItem != null) {
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = Color(0x33059669)
-                        ) {
-                            Text(
-                                "⚡ Fusão: Funde com ${weapon.evolutionItem.displayName} ➔ ${weapon.evolvedWeapon.displayName}",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF6EE7B7),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                            )
-                        }
-                    }
-                } else if (isStageUnlocked) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(0x33059669)
                     ) {
-                        Text(weapon.displayName, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFBAE6FD))
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = Color(0x3338BDF8)
-                        ) {
-                            Text(
-                                "DISPONÍVEL NA FASE",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Black,
-                                color = Color(0xFF38BDF8),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
+                        Text(
+                            "⚡ Fusão: Funde com ${weapon.evolutionItem.displayName} ➔ ${weapon.evolvedWeapon.displayName}",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF6EE7B7),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                        )
                     }
-                    Spacer(modifier = Modifier.height(3.dp))
-                    Text(
-                        "Disponível nas partidas a partir da ${stageTitleForNumber(weapon.unlockedAtStage)}! Escolha em batalha para catalogar suas propriedades.",
-                        fontSize = 11.sp,
-                        color = Color(0xFF94A3B8),
-                        lineHeight = 15.sp
-                    )
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("🔒 Arma Bloqueada", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = Color(0x22EF4444)
-                        ) {
-                            Text(
-                                "REQUER FASE ${weapon.unlockedAtStage}",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFCA5A5),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(3.dp))
-                    Text(
-                        "Conclua a fase anterior para desbloquear a ${stageTitleForNumber(weapon.unlockedAtStage)} e ter acesso a este equipamento.",
-                        fontSize = 11.sp,
-                        color = Color(0xFF64748B),
-                        lineHeight = 15.sp
-                    )
                 }
             }
         }
@@ -539,28 +446,19 @@ fun WeaponLibraryCard(weapon: WeaponType, isDiscovered: Boolean, timesUsed: Int,
 }
 
 @Composable
-fun PassiveLibraryCard(passive: PassiveType, isDiscovered: Boolean, timesUsed: Int, highestUnlocked: Int) {
-    val isStageUnlocked = passive.unlockedAtStage <= highestUnlocked
-
+fun PassiveLibraryCard(passive: PassiveType, isDiscovered: Boolean, timesUsed: Int) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .testTag("passive_card_${passive.name}")
             .border(
                 1.dp,
-                when {
-                    isDiscovered -> Color(0x4410B981)
-                    isStageUnlocked -> Color(0x3310B981)
-                    else -> Color(0x15FFFFFF)
-                },
+                if (isDiscovered) Color(0x4410B981) else Color(0x2210B981),
                 RoundedCornerShape(14.dp)
             ),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = when {
-                isDiscovered -> Color(0xFF1E293B)
-                isStageUnlocked -> Color(0xFF141E28)
-                else -> Color(0xFF0B1120)
-            }
+            containerColor = if (isDiscovered) Color(0xFF1E293B) else Color(0xFF141E28)
         )
     ) {
         Row(
@@ -572,66 +470,42 @@ fun PassiveLibraryCard(passive: PassiveType, isDiscovered: Boolean, timesUsed: I
             Surface(
                 modifier = Modifier.size(52.dp),
                 shape = RoundedCornerShape(12.dp),
-                color = when {
-                    isDiscovered -> Color(0x33059669)
-                    isStageUnlocked -> Color(0x22059669)
-                    else -> Color(0x15FFFFFF)
-                }
+                color = if (isDiscovered) Color(0x33059669) else Color(0x1F059669)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    if (isDiscovered) {
-                        val iconEmoji = when (passive) {
-                            PassiveType.PASTA_FLUOR -> "✨"
-                            PassiveType.ESPELHO_PRECISAO -> "🎯"
-                            PassiveType.FIO_EXTRA_FORTE -> "📏"
-                            PassiveType.ENXAGUANTE_MENTA -> "⏱️"
-                            PassiveType.MASCARA_CIRURGICA -> "😷"
-                            PassiveType.LUVAS_LATEX -> "🧤"
-                            PassiveType.PASTILHA_REVELADORA -> "🧲"
-                            PassiveType.VITAMINA_C -> "🍊"
-                            PassiveType.OCULOS_PROTECAO -> "🥽"
-                            PassiveType.RESINA_COMPOSTA -> "💎"
-                            PassiveType.SELANTE_FOSSULAS -> "🛡️"
-                            PassiveType.AVENTAL_CHUMBO -> "🦺"
-                            PassiveType.GEL_XILITOL -> "🍬"
-                            PassiveType.MATRIZ_ACO -> "⛓️"
-                            PassiveType.EXTRATO_PROPOLIS -> "🍯"
-                        }
-                        Text(iconEmoji, fontSize = 26.sp)
-                    } else {
-                        Icon(
-                            Icons.Default.Lock,
-                            contentDescription = "Bloqueado",
-                            tint = if (isStageUnlocked) Color(0xFF34D399) else Color(0xFF64748B),
-                            modifier = Modifier.size(24.dp)
-                        )
+                    val iconEmoji = when (passive) {
+                        PassiveType.PASTA_FLUOR -> "✨"
+                        PassiveType.ESPELHO_PRECISAO -> "🎯"
+                        PassiveType.FIO_EXTRA_FORTE -> "📏"
+                        PassiveType.ENXAGUANTE_MENTA -> "⏱️"
+                        PassiveType.MASCARA_CIRURGICA -> "😷"
+                        PassiveType.LUVAS_LATEX -> "🧤"
+                        PassiveType.PASTILHA_REVELADORA -> "🧲"
+                        PassiveType.VITAMINA_C -> "🍊"
+                        PassiveType.OCULOS_PROTECAO -> "🥽"
+                        PassiveType.RESINA_COMPOSTA -> "💎"
+                        PassiveType.SELANTE_FOSSULAS -> "🛡️"
+                        PassiveType.AVENTAL_CHUMBO -> "🦺"
+                        PassiveType.GEL_XILITOL -> "🍬"
+                        PassiveType.MATRIZ_ACO -> "⛓️"
+                        PassiveType.EXTRATO_PROPOLIS -> "🍯"
                     }
+                    Text(iconEmoji, fontSize = 26.sp)
                 }
             }
 
             Spacer(modifier = Modifier.width(14.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                if (isDiscovered) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(passive.displayName, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = Color(0x3334D399)
-                            ) {
-                                Text(
-                                    "Fase ${passive.unlockedAtStage}",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFA7F3D0),
-                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                                )
-                            }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(passive.displayName, modifier = Modifier.weight(1f, fill = false), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        if (isDiscovered) {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
                                 color = Color(0x3310B981)
@@ -644,78 +518,37 @@ fun PassiveLibraryCard(passive: PassiveType, isDiscovered: Boolean, timesUsed: I
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
+                        } else {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0x2210B981)
+                            ) {
+                                Text(
+                                    "Item Clínico",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFFA7F3D0),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
                         }
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(passive.description, fontSize = 12.sp, color = Color(0xFFCBD5E1), lineHeight = 16.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(passive.description, fontSize = 12.sp, color = Color(0xFFCBD5E1), lineHeight = 16.sp)
 
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = Color(0x3338BDF8)
-                    ) {
-                        Text(
-                            "⭐ Bônus por Nível: ${passive.perLevelBonus}",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF7DD3FC),
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                } else if (isStageUnlocked) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(passive.displayName, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFA7F3D0))
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = Color(0x3310B981)
-                        ) {
-                            Text(
-                                "DISPONÍVEL NA FASE",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Black,
-                                color = Color(0xFF34D399),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(3.dp))
+                Spacer(modifier = Modifier.height(6.dp))
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0x3338BDF8)
+                ) {
                     Text(
-                        "Disponível para coletar em partidas a partir da ${stageTitleForNumber(passive.unlockedAtStage)}! Equipe-o para catalogar suas propriedades.",
+                        "⭐ Bônus por Nível: ${passive.perLevelBonus}",
                         fontSize = 11.sp,
-                        color = Color(0xFF94A3B8),
-                        lineHeight = 15.sp
-                    )
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("🔒 Equipamento Bloqueado", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = Color(0x22EF4444)
-                        ) {
-                            Text(
-                                "REQUER FASE ${passive.unlockedAtStage}",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFCA5A5),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(3.dp))
-                    Text(
-                        "Complete a fase anterior para liberar a ${stageTitleForNumber(passive.unlockedAtStage)} e ter este item nas opções de level up.",
-                        fontSize = 11.sp,
-                        color = Color(0xFF64748B),
-                        lineHeight = 15.sp
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF7DD3FC),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
             }
@@ -724,28 +557,19 @@ fun PassiveLibraryCard(passive: PassiveType, isDiscovered: Boolean, timesUsed: I
 }
 
 @Composable
-fun FusionLibraryCard(evolution: EvolutionType, isDiscovered: Boolean, timesUsed: Int, highestUnlocked: Int) {
-    val isStageUnlocked = evolution.unlockedAtStage <= highestUnlocked
-
+fun FusionLibraryCard(evolution: EvolutionType, isDiscovered: Boolean, timesUsed: Int) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .testTag("fusion_card_${evolution.name}")
             .border(
                 2.dp,
-                when {
-                    isDiscovered -> Color(0xFFF59E0B)
-                    isStageUnlocked -> Color(0x44F59E0B)
-                    else -> Color(0x15FFFFFF)
-                },
+                if (isDiscovered) Color(0xFFF59E0B) else Color(0x66F59E0B),
                 RoundedCornerShape(14.dp)
             ),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = when {
-                isDiscovered -> Color(0xFF1E1B4B)
-                isStageUnlocked -> Color(0xFF181830)
-                else -> Color(0xFF0B1120)
-            }
+            containerColor = if (isDiscovered) Color(0xFF1E1B4B) else Color(0xFF151433)
         )
     ) {
         Row(
@@ -757,36 +581,44 @@ fun FusionLibraryCard(evolution: EvolutionType, isDiscovered: Boolean, timesUsed
             Surface(
                 modifier = Modifier.size(56.dp),
                 shape = RoundedCornerShape(14.dp),
-                color = when {
-                    isDiscovered -> Color(0xFF4338CA)
-                    isStageUnlocked -> Color(0x224338CA)
-                    else -> Color(0x15FFFFFF)
-                }
+                color = if (isDiscovered) Color(0xFF4338CA) else Color(0x334338CA)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    if (isDiscovered) {
-                        Text("⚡", fontSize = 28.sp)
-                    } else {
-                        Icon(
-                            Icons.Default.Lock,
-                            contentDescription = "Bloqueado",
-                            tint = if (isStageUnlocked) Color(0xFFFBBF24) else Color(0xFF64748B),
-                            modifier = Modifier.size(24.dp)
-                        )
+                    val fusionEmoji = when (evolution) {
+                        EvolutionType.ESCOVA_ULTRASSONICA -> "⚡🪥"
+                        EvolutionType.FIO_LASER_TITANIO -> "⚡🧵"
+                        EvolutionType.TSUNAMI_BICARBONATO -> "🌊💧"
+                        EvolutionType.BROCA_INDELAVEL -> "⚡🔩"
+                        EvolutionType.VENTANIA_CRIOGENICA -> "❄️🧴"
+                        EvolutionType.RAIO_SOLAR_ODONTO -> "☀️🔦"
+                        EvolutionType.BOMBARDEIO_XILITOL -> "💥💣"
+                        EvolutionType.ESPELHO_PRISMATICO -> "🌈🪞"
+                        EvolutionType.NEBULIZADOR_CIRURGICO -> "🌫️💉"
+                        EvolutionType.VORTEX_GRAVITACIONAL -> "🌌🌪️"
+                        EvolutionType.GUILHOTINA_PERIODONTAL -> "⚔️🗡️"
+                        EvolutionType.NEVOA_BIOATIVA -> "🍯💨"
+                        EvolutionType.REDE_CONTENCAO_TITANIO -> "🕸️🎗️"
+                        EvolutionType.EMISSOR_CAVITACAO -> "🔊💥"
+                        EvolutionType.GARRA_EXTRATORA_PESADA -> "🦾🦀"
                     }
+                    Text(fusionEmoji, fontSize = 24.sp)
                 }
             }
 
             Spacer(modifier = Modifier.width(14.dp))
 
+            val baseWeaponName = evolution.baseWeapon.displayName
+            val passiveName = evolution.requiredPassive.displayName
+
             Column(modifier = Modifier.weight(1f)) {
-                if (isDiscovered) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(evolution.displayName, fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color(0xFFFDE047))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(evolution.displayName, modifier = Modifier.weight(1f, fill = false), fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color(0xFFFDE047))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
                             color = Color(0xFFD97706)
@@ -799,84 +631,53 @@ fun FusionLibraryCard(evolution: EvolutionType, isDiscovered: Boolean, timesUsed
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(evolution.description, fontSize = 12.sp, color = Color(0xFFE2E8F0), lineHeight = 16.sp)
-
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = Color(0x447C3AED)
-                    ) {
-                        Text(
-                            "🧪 Receita: ${evolution.baseWeapon.displayName} (MAX) + ${evolution.requiredPassive.displayName}",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFC084FC),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("💥 Dano: ${evolution.damage.toInt()}", fontSize = 11.sp, color = Color(0xFFFBBF24), fontWeight = FontWeight.Bold)
-                        Text("⏱️ Cooldown: ${evolution.cooldownSeconds}s", fontSize = 11.sp, color = Color(0xFF86EFAC), fontWeight = FontWeight.Bold)
-                        Text("📏 Raio: ${evolution.rangeRadius.toInt()}px", fontSize = 11.sp, color = Color(0xFF93C5FD), fontWeight = FontWeight.Bold)
-                    }
-                } else if (isStageUnlocked) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(evolution.displayName, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE047))
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = Color(0x33F59E0B)
-                        ) {
-                            Text(
-                                "RECEITA DISPONÍVEL",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFDE047),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
+                        if (isDiscovered && timesUsed > 0) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0x33F59E0B)
+                            ) {
+                                Text(
+                                    "Usado: $timesUsed",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFFDE047),
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                )
+                            }
                         }
                     }
-                    Spacer(modifier = Modifier.height(3.dp))
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(evolution.description, fontSize = 12.sp, color = Color(0xFFE2E8F0), lineHeight = 16.sp)
+
+                Spacer(modifier = Modifier.height(6.dp))
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0x447C3AED)
+                ) {
                     Text(
-                        "Funda ${evolution.baseWeapon.displayName} (Nível 5) + ${evolution.requiredPassive.displayName} em uma partida para registrar esta fusão lendária!",
+                        "🧪 Receita: $baseWeaponName (MAX) + $passiveName",
                         fontSize = 11.sp,
-                        color = Color(0xFFCBD5E1),
-                        lineHeight = 15.sp
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFC084FC),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("🔒 Fusão Bloqueada", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = Color(0x22EF4444)
-                        ) {
-                            Text(
-                                "REQUER FASE ${evolution.unlockedAtStage}",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFCA5A5),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(3.dp))
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("💥 Dano: ${evolution.damage.toInt()}", fontSize = 11.sp, color = Color(0xFFFBBF24), fontWeight = FontWeight.Bold)
+                    Text("⏱️ Cooldown: ${evolution.cooldownSeconds}s", fontSize = 11.sp, color = Color(0xFF86EFAC), fontWeight = FontWeight.Bold)
+                    Text("📏 Raio: ${evolution.rangeRadius.toInt()}px", fontSize = 11.sp, color = Color(0xFF93C5FD), fontWeight = FontWeight.Bold)
+                }
+
+                if (!isDiscovered) {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        "Desbloqueie a ${stageTitleForNumber(evolution.unlockedAtStage)} para ter acesso aos equipamentos necessários para criar esta fusão lendária.",
-                        fontSize = 11.sp,
-                        color = Color(0xFF64748B),
-                        lineHeight = 15.sp
+                        "💡 Funda $baseWeaponName (Nível 5) + $passiveName em batalha para registrar!",
+                        fontSize = 10.sp,
+                        color = Color(0xFF94A3B8)
                     )
                 }
             }

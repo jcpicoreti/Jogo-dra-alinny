@@ -146,7 +146,10 @@ fun StageCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Surface(
                         shape = CircleShape,
                         color = themeColor,
@@ -170,7 +173,7 @@ fun StageCard(
 
                     Spacer(modifier = Modifier.width(12.dp))
 
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 stage.title,
@@ -201,6 +204,8 @@ fun StageCard(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 if (isSelected) {
                     Surface(

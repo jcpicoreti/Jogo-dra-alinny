@@ -149,8 +149,11 @@ fun AchievementCard(
                         def.title,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = if (isUnlocked) Color.White else Color(0xFF94A3B8)
+                        color = if (isUnlocked) Color.White else Color(0xFF94A3B8),
+                        modifier = Modifier.weight(1f, fill = false)
                     )
+
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     if (isUnlocked) {
                         Surface(

@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.ScoreEntity
@@ -152,7 +153,10 @@ fun RankingItemCard(rank: Int, entry: ScoreEntity) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 // Rank Number or Medal
                 Box(
                     modifier = Modifier.width(36.dp),
@@ -168,19 +172,25 @@ fun RankingItemCard(rank: Int, entry: ScoreEntity) {
 
                 Spacer(modifier = Modifier.width(10.dp))
 
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = entry.playerName,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color.White
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
                             entry.stageId,
                             fontSize = 11.sp,
                             color = Color(0xFF38BDF8),
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(" • ", fontSize = 11.sp, color = Color(0xFF64748B))
                         Text(
@@ -197,6 +207,8 @@ fun RankingItemCard(rank: Int, entry: ScoreEntity) {
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.width(8.dp))
 
             // Score Badge
             Surface(

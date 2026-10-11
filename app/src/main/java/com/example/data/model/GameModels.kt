@@ -364,7 +364,6 @@ enum class EvolutionType(
     val damage: Float,
     val cooldownSeconds: Float,
     val rangeRadius: Float,
-    val baseWeapon: WeaponType,
     val requiredPassive: PassiveType
 ) {
     ESCOVA_ULTRASSONICA(
@@ -373,7 +372,6 @@ enum class EvolutionType(
         damage = 65f,
         cooldownSeconds = 0.45f,
         rangeRadius = 170f,
-        baseWeapon = WeaponType.ESCOVA_DENTE,
         requiredPassive = PassiveType.PASTA_FLUOR
     ),
     FIO_LASER_TITANIO(
@@ -382,7 +380,6 @@ enum class EvolutionType(
         damage = 100f,
         cooldownSeconds = 0.9f,
         rangeRadius = 390f,
-        baseWeapon = WeaponType.FIO_DENTAL,
         requiredPassive = PassiveType.ESPELHO_PRECISAO
     ),
     TSUNAMI_BICARBONATO(
@@ -391,7 +388,6 @@ enum class EvolutionType(
         damage = 55f,
         cooldownSeconds = 0.4f,
         rangeRadius = 320f,
-        baseWeapon = WeaponType.JATO_BICARBONATO,
         requiredPassive = PassiveType.FIO_EXTRA_FORTE
     ),
     BROCA_INDELAVEL(
@@ -400,7 +396,6 @@ enum class EvolutionType(
         damage = 75f,
         cooldownSeconds = 0.2f,
         rangeRadius = 140f,
-        baseWeapon = WeaponType.BROCA_ODONTO,
         requiredPassive = PassiveType.MATRIZ_ACO
     ),
     VENTANIA_CRIOGENICA(
@@ -409,7 +404,6 @@ enum class EvolutionType(
         damage = 38f,
         cooldownSeconds = 0.25f,
         rangeRadius = 180f,
-        baseWeapon = WeaponType.ENXAGUANTE_AURA,
         requiredPassive = PassiveType.ENXAGUANTE_MENTA
     ),
     RAIO_SOLAR_ODONTO(
@@ -418,7 +412,6 @@ enum class EvolutionType(
         damage = 180f,
         cooldownSeconds = 1.6f,
         rangeRadius = 400f,
-        baseWeapon = WeaponType.LUZ_FOTOPOLIMERIZADORA,
         requiredPassive = PassiveType.OCULOS_PROTECAO
     ),
     BOMBARDEIO_XILITOL(
@@ -427,7 +420,6 @@ enum class EvolutionType(
         damage = 110f,
         cooldownSeconds = 1.3f,
         rangeRadius = 260f,
-        baseWeapon = WeaponType.PASTA_EXPLOSIVA,
         requiredPassive = PassiveType.GEL_XILITOL
     ),
     ESPELHO_PRISMATICO(
@@ -436,7 +428,6 @@ enum class EvolutionType(
         damage = 85f,
         cooldownSeconds = 0.9f,
         rangeRadius = 280f,
-        baseWeapon = WeaponType.ESPELHO_CLINICO,
         requiredPassive = PassiveType.SELANTE_FOSSULAS
     ),
     NEBULIZADOR_CIRURGICO(
@@ -445,7 +436,6 @@ enum class EvolutionType(
         damage = 70f,
         cooldownSeconds = 1.0f,
         rangeRadius = 270f,
-        baseWeapon = WeaponType.SERINGA_ANESTESICA,
         requiredPassive = PassiveType.MASCARA_CIRURGICA
     ),
     VORTEX_GRAVITACIONAL(
@@ -454,7 +444,6 @@ enum class EvolutionType(
         damage = 60f,
         cooldownSeconds = 1.2f,
         rangeRadius = 250f,
-        baseWeapon = WeaponType.SUGADOR_SALIVA,
         requiredPassive = PassiveType.PASTILHA_REVELADORA
     ),
     GUILHOTINA_PERIODONTAL(
@@ -463,7 +452,6 @@ enum class EvolutionType(
         damage = 130f,
         cooldownSeconds = 0.9f,
         rangeRadius = 240f,
-        baseWeapon = WeaponType.CURETA_GRACEY,
         requiredPassive = PassiveType.LUVAS_LATEX
     ),
     NEVOA_BIOATIVA(
@@ -472,7 +460,6 @@ enum class EvolutionType(
         damage = 50f,
         cooldownSeconds = 0.4f,
         rangeRadius = 260f,
-        baseWeapon = WeaponType.SPRAY_CLOREXIDINA,
         requiredPassive = PassiveType.EXTRATO_PROPOLIS
     ),
     REDE_CONTENCAO_TITANIO(
@@ -481,7 +468,6 @@ enum class EvolutionType(
         damage = 95f,
         cooldownSeconds = 1.5f,
         rangeRadius = 280f,
-        baseWeapon = WeaponType.FITA_EXPANSIVA,
         requiredPassive = PassiveType.RESINA_COMPOSTA
     ),
     EMISSOR_CAVITACAO(
@@ -490,7 +476,6 @@ enum class EvolutionType(
         damage = 140f,
         cooldownSeconds = 1.4f,
         rangeRadius = 360f,
-        baseWeapon = WeaponType.ULTRASSOM_ODONTO,
         requiredPassive = PassiveType.VITAMINA_C
     ),
     GARRA_EXTRATORA_PESADA(
@@ -499,9 +484,27 @@ enum class EvolutionType(
         damage = 250f,
         cooldownSeconds = 1.8f,
         rangeRadius = 300f,
-        baseWeapon = WeaponType.PINCA_CIRURGICA,
         requiredPassive = PassiveType.AVENTAL_CHUMBO
     );
+
+    val baseWeapon: WeaponType
+        get() = when (this) {
+            ESCOVA_ULTRASSONICA -> WeaponType.ESCOVA_DENTE
+            FIO_LASER_TITANIO -> WeaponType.FIO_DENTAL
+            TSUNAMI_BICARBONATO -> WeaponType.JATO_BICARBONATO
+            BROCA_INDELAVEL -> WeaponType.BROCA_ODONTO
+            VENTANIA_CRIOGENICA -> WeaponType.ENXAGUANTE_AURA
+            RAIO_SOLAR_ODONTO -> WeaponType.LUZ_FOTOPOLIMERIZADORA
+            BOMBARDEIO_XILITOL -> WeaponType.PASTA_EXPLOSIVA
+            ESPELHO_PRISMATICO -> WeaponType.ESPELHO_CLINICO
+            NEBULIZADOR_CIRURGICO -> WeaponType.SERINGA_ANESTESICA
+            VORTEX_GRAVITACIONAL -> WeaponType.SUGADOR_SALIVA
+            GUILHOTINA_PERIODONTAL -> WeaponType.CURETA_GRACEY
+            NEVOA_BIOATIVA -> WeaponType.SPRAY_CLOREXIDINA
+            REDE_CONTENCAO_TITANIO -> WeaponType.FITA_EXPANSIVA
+            EMISSOR_CAVITACAO -> WeaponType.ULTRASSOM_ODONTO
+            GARRA_EXTRATORA_PESADA -> WeaponType.PINCA_CIRURGICA
+        }
 
     val unlockedAtStage: Int
         get() = maxOf(baseWeapon.unlockedAtStage, requiredPassive.unlockedAtStage)

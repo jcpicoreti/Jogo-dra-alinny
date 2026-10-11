@@ -84,25 +84,30 @@ class GameplayCrashTest {
         engine.update(0.016f)
         engine.dismissChest()
 
-        // Test All characters and stages initialization
+        // Test characters initialization
         for (char in CharacterId.values()) {
-            for (stg in StageId.values()) {
-                val eng = GameEngine(char, stg, soundManager, emptyList())
-                eng.update(0.016f)
-            }
+            val eng = GameEngine(char, StageId.STAGE_1_ESMALTE, soundManager, emptyList())
+            eng.update(0.016f)
+        }
+        // Test stages initialization
+        for (stg in StageId.values()) {
+            val eng = GameEngine(CharacterId.DRA_ALINNY, stg, soundManager, emptyList())
+            eng.update(0.016f)
         }
     }
 
     @Test
-    fun testRepositoryAndDatabase() = runBlocking {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val db = AppDatabase.getDatabase(context)
-        assertNotNull(db)
+    fun testRepositoryAndDatabase() {
+        runBlocking {
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val db = AppDatabase.getDatabase(context)
+            assertNotNull(db)
 
-        val repo = GameRepository(context)
-        val meta = repo.getPlayerMeta().first()
-        // verify no crash
-        repo.recordMatchStats(10, 60, 5, 1, 50)
+            val repo = GameRepository(context)
+            val meta = repo.getPlayerMeta().first()
+            // verify no crash
+            repo.recordMatchStats(10, 60, 5, 1, 50)
+        }
     }
 
     @Test

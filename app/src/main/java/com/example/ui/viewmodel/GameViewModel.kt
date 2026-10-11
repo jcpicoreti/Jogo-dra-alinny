@@ -27,6 +27,24 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+import com.example.data.model.EvolutionType
+import com.example.data.repository.ALL_ACHIEVEMENTS
+
+sealed class NotificationPopup {
+    data class Achievement(
+        val title: String,
+        val description: String,
+        val icon: String = "🏆"
+    ) : NotificationPopup()
+
+    data class Fusion(
+        val name: String,
+        val description: String,
+        val recipe: String,
+        val icon: String = "⚡"
+    ) : NotificationPopup()
+}
+
 sealed class Screen {
     object Splash : Screen()
     object Menu : Screen()
@@ -80,6 +98,38 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _activeGameState = MutableStateFlow<GameState?>(null)
     val activeGameState: StateFlow<GameState?> = _activeGameState.asStateFlow()
+
+    private val _activePopup = MutableStateFlow<NotificationPopup?>(null)
+    val activePopup: StateFlow<NotificationPopup?> = _activePopup.asStateFlow()
+
+    private var popupJob: Job? = null
+
+    fun triggerAchievementPopup(title: String, description: String, icon: String = "🏆") {
+        popupJob?.cancel()
+        _activePopup.value = NotificationPopup.Achievement(title, description, icon)
+        popupJob = viewModelScope.launch {
+            delay(4500)
+            if (_activePopup.value is NotificationPopup.Achievement && (_activePopup.value as NotificationPopup.Achievement).title == title) {
+                _activePopup.value = null
+            }
+        }
+    }
+
+    fun triggerFusionPopup(name: String, description: String, recipe: String, icon: String = "⚡") {
+        popupJob?.cancel()
+        _activePopup.value = NotificationPopup.Fusion(name, description, recipe, icon)
+        popupJob = viewModelScope.launch {
+            delay(4500)
+            if (_activePopup.value is NotificationPopup.Fusion && (_activePopup.value as NotificationPopup.Fusion).name == name) {
+                _activePopup.value = null
+            }
+        }
+    }
+
+    fun dismissPopup() {
+        popupJob?.cancel()
+        _activePopup.value = null
+    }
 
     private var gameLoopJob: Job? = null
 
@@ -145,7 +195,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             viewModelScope.launch(Dispatchers.IO) {
-                repository.recordMatchStats(
+                val freshlyUnlocked = repository.recordMatchStats(
                     germsKilled = kills,
                     timeSeconds = timeSec,
                     lootCollected = lootCount,
@@ -154,12 +204,59 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                     isVictory = isVictorious,
                     stage = stageId
                 )
+                if (freshlyUnlocked.isNotEmpty()) {
+                    val firstAch = ALL_ACHIEVEMENTS.find { it.id == freshlyUnlocked.first() }
+                    if (firstAch != null) {
+                        viewModelScope.launch(Dispatchers.Main) {
+                            soundManager.playLevelUp()
+                            triggerAchievementPopup(firstAch.title, firstAch.description)
+                        }
+                    }
+                }
             }
         }
 
         engine.onAchievementTriggered = { achId ->
             viewModelScope.launch(Dispatchers.IO) {
-                repository.unlockAchievement(achId)
+                val freshlyUnlocked = repository.unlockAchievement(achId)
+                if (freshlyUnlocked) {
+                    val def = ALL_ACHIEVEMENTS.find { it.id == achId }
+                    if (def != null) {
+                        viewModelScope.launch(Dispatchers.Main) {
+                            soundManager.playLevelUp()
+                            triggerAchievementPopup(def.title, def.description)
+                        }
+                    }
+                }
+            }
+        }
+
+        engine.onFusionTriggered = { evo ->
+            viewModelScope.launch(Dispatchers.Main) {
+                val fusionEmoji = when (evo) {
+                    EvolutionType.ESCOVA_ULTRASSONICA -> "⚡🪥"
+                    EvolutionType.FIO_LASER_TITANIO -> "⚡🧵"
+                    EvolutionType.TSUNAMI_BICARBONATO -> "🌊💧"
+                    EvolutionType.BROCA_INDELAVEL -> "⚡🔩"
+                    EvolutionType.VENTANIA_CRIOGENICA -> "❄️🧴"
+                    EvolutionType.RAIO_SOLAR_ODONTO -> "☀️🔦"
+                    EvolutionType.BOMBARDEIO_XILITOL -> "💥💣"
+                    EvolutionType.ESPELHO_PRISMATICO -> "🌈🪞"
+                    EvolutionType.NEBULIZADOR_CIRURGICO -> "🌫️💉"
+                    EvolutionType.VORTEX_GRAVITACIONAL -> "🌌🌪️"
+                    EvolutionType.GUILHOTINA_PERIODONTAL -> "⚔️🗡️"
+                    EvolutionType.NEVOA_BIOATIVA -> "🍯💨"
+                    EvolutionType.REDE_CONTENCAO_TITANIO -> "🕸️🎗️"
+                    EvolutionType.EMISSOR_CAVITACAO -> "🔊💥"
+                    EvolutionType.GARRA_EXTRATORA_PESADA -> "🦾🦀"
+                }
+                soundManager.playLaser()
+                triggerFusionPopup(
+                    name = evo.displayName,
+                    description = evo.description,
+                    recipe = "${evo.baseWeapon.displayName} + ${evo.requiredPassive.displayName}",
+                    icon = fusionEmoji
+                )
             }
         }
 
@@ -225,7 +322,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun saveMatchScore(playerName: String, kills: Int, timeSec: Int, level: Int) {
         val score = kills * 10 + timeSec * 5 + level * 50
         val entry = ScoreEntity(
-            playerName = playerName.ifBlank { "Dr. Sorriso" },
+            playerName = playerName.ifBlank { "Jogador" },
             characterId = _selectedCharacter.value.name,
             stageId = _selectedStage.value.title,
             timeSurvivedSeconds = timeSec,
@@ -243,6 +340,13 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             val success = repository.purchaseUpgrade(upgradeType)
             if (success) {
                 soundManager.playChestOpen()
+                val unlocked = repository.unlockAchievement("clinic_first_upgrade")
+                if (unlocked) {
+                    viewModelScope.launch(Dispatchers.Main) {
+                        soundManager.playLevelUp()
+                        triggerAchievementPopup("Clínica Renovada", "Compre sua primeira melhoria permanente na clínica.")
+                    }
+                }
             }
         }
     }

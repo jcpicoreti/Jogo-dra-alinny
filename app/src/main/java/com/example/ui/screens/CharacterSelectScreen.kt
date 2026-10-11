@@ -143,7 +143,10 @@ fun CharacterCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     // Full Fidelity Cartoon Character Avatar Badge
                     Surface(
                         shape = CircleShape,
@@ -170,7 +173,7 @@ fun CharacterCard(
 
                     Spacer(modifier = Modifier.width(12.dp))
 
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = charItem.displayName,
                             fontSize = 18.sp,
@@ -185,6 +188,8 @@ fun CharacterCard(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 // Selection or Lock indicator
                 if (!isUnlocked) {

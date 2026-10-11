@@ -121,6 +121,7 @@ class GameEngine(
     var onMatchComplete: ((kills: Int, timeSec: Int, lootCount: Int, bossesCount: Int, coinsEarned: Int) -> Unit)? = null
     var onAchievementTriggered: ((String) -> Unit)? = null
     var onItemDiscovered: ((String) -> Unit)? = null
+    var onFusionTriggered: ((EvolutionType) -> Unit)? = null
     private var eliteSpawnedPreBoss = false
 
     fun setMoveDirection(x: Float, y: Float) {
@@ -1257,6 +1258,7 @@ class GameEngine(
                     )
                 }
                 onItemDiscovered?.invoke(option.evolution.name)
+                onFusionTriggered?.invoke(option.evolution)
                 if (option.evolution == EvolutionType.ESCOVA_ULTRASSONICA) {
                     onAchievementTriggered?.invoke("evolve_brush")
                 }

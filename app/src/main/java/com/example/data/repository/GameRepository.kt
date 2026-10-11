@@ -104,7 +104,8 @@ class GameRepository(context: Context) {
         coinsEarned: Int,
         isVictory: Boolean = false,
         stage: StageId = StageId.STAGE_1_ESMALTE
-    ) {
+    ): List<String> {
+        val newlyUnlocked = mutableListOf<String>()
         val meta = playerMetaDao.getPlayerMetaSync() ?: PlayerMetaEntity()
         val nextUnlockedStage = if (isVictory && stage.stageNumber >= meta.highestStageUnlocked && stage.stageNumber < 6) {
             stage.stageNumber + 1
@@ -123,12 +124,19 @@ class GameRepository(context: Context) {
         playerMetaDao.updatePlayerMeta(newMeta)
 
         // Check milestones
-        updateAchievementProgress("kills_100", newMeta.totalGermsEliminated)
-        updateAchievementProgress("kills_500", newMeta.totalGermsEliminated)
-        updateAchievementProgress("kills_1000", newMeta.totalGermsEliminated)
-        updateAchievementProgress("kills_5000", newMeta.totalGermsEliminated)
-        updateAchievementProgress("collect_loot_100", newMeta.totalLootCollected)
-        updateAchievementProgress("collect_loot_500", newMeta.totalLootCollected)
+        if (updateAchievementProgress("kills_100", newMeta.totalGermsEliminated)) newlyUnlocked.add("kills_100")
+        if (updateAchievementProgress("kills_500", newMeta.totalGermsEliminated)) newlyUnlocked.add("kills_500")
+        if (updateAchievementProgress("kills_1000", newMeta.totalGermsEliminated)) newlyUnlocked.add("kills_1000")
+        if (updateAchievementProgress("kills_5000", newMeta.totalGermsEliminated)) newlyUnlocked.add("kills_5000")
+        if (updateAchievementProgress("collect_loot_100", newMeta.totalLootCollected)) newlyUnlocked.add("collect_loot_100")
+        if (updateAchievementProgress("collect_loot_500", newMeta.totalLootCollected)) newlyUnlocked.add("collect_loot_500")
+
+        if (isVictory && stage == StageId.STAGE_4_APARELHO) {
+            if (unlockAchievement("stage_aparelho")) newlyUnlocked.add("stage_aparelho")
+        }
+        if (stage == StageId.STAGE_INFINITE && timeSeconds >= 720) {
+            if (unlockAchievement("infinite_survival")) newlyUnlocked.add("infinite_survival")
+        }
 
         // Character Unlocks check
         if (newMeta.totalGermsEliminated >= 1000) {
@@ -137,13 +145,15 @@ class GameRepository(context: Context) {
         if (newMeta.totalLootCollected >= 500) {
             unlockCharacter(CharacterId.RICK)
         }
+        return newlyUnlocked
     }
 
     // Achievements
     fun getAllAchievements(): Flow<List<AchievementEntity>> = achievementDao.getAllAchievements()
 
-    suspend fun unlockAchievement(achievementId: String) {
+    suspend fun unlockAchievement(achievementId: String): Boolean {
         val existing = achievementDao.getAchievement(achievementId)
+        if (existing?.isUnlocked == true) return false
         val def = ALL_ACHIEVEMENTS.find { it.id == achievementId }
         val maxProg = def?.maxProgress ?: 1
         achievementDao.insertOrUpdate(
@@ -154,12 +164,13 @@ class GameRepository(context: Context) {
                 unlockedTimestamp = System.currentTimeMillis()
             )
         )
+        return true
     }
 
-    suspend fun updateAchievementProgress(achievementId: String, currentProgress: Int) {
-        val def = ALL_ACHIEVEMENTS.find { it.id == achievementId } ?: return
+    suspend fun updateAchievementProgress(achievementId: String, currentProgress: Int): Boolean {
+        val def = ALL_ACHIEVEMENTS.find { it.id == achievementId } ?: return false
         val existing = achievementDao.getAchievement(achievementId)
-        if (existing?.isUnlocked == true) return
+        if (existing?.isUnlocked == true) return false
 
         val newProg = currentProgress.coerceAtMost(def.maxProgress)
         val isNowUnlocked = newProg >= def.maxProgress
@@ -171,6 +182,7 @@ class GameRepository(context: Context) {
                 unlockedTimestamp = if (isNowUnlocked) System.currentTimeMillis() else null
             )
         )
+        return isNowUnlocked
     }
 
     // Character Unlocks

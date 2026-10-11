@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -94,7 +95,8 @@ fun MainMenuScreen(viewModel: GameViewModel) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .statusBarsPadding()
+                .padding(top = 18.dp, start = 16.dp, end = 16.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -147,7 +149,7 @@ fun MainMenuScreen(viewModel: GameViewModel) {
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x3338BDF8))
                 ) {
                     Text(
-                        text = "Fase $highestUnlocked / 5",
+                        text = "Fase $highestUnlocked / 6",
                         color = Color(0xFFBAE6FD),
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp,
@@ -397,7 +399,7 @@ fun MainMenuScreen(viewModel: GameViewModel) {
                             .weight(1f)
                             .testTag("library_button"),
                         title = "BIBLIOTECA",
-                        subtitle = "30 Armas & 15 Fusões",
+                        subtitle = "45 Poderes & Fusões",
                         iconEmoji = "📚",
                         accentColor = Color(0xFF0284C7),
                         onClick = { viewModel.navigateTo(Screen.Library) }
@@ -479,7 +481,7 @@ fun CompactMenuCard(
 ) {
     Card(
         modifier = modifier
-            .height(52.dp)
+            .height(58.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0x33FFFFFF)),

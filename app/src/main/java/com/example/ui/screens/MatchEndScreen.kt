@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -61,7 +62,7 @@ fun MatchEndScreen(
         viewModel.navigateTo(Screen.Menu)
     }
 
-    var playerName by remember { mutableStateOf("Dra. Alinny") }
+    var playerName by remember { mutableStateOf("") }
     var isScoreSaved by remember { mutableStateOf(false) }
 
     val totalScore = kills * 10 + timeSec * 5 + level * 50
@@ -78,8 +79,9 @@ fun MatchEndScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(top = 20.dp, start = 20.dp, end = 20.dp, bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(20.dp))
@@ -204,6 +206,7 @@ fun MatchEndScreen(
                             value = playerName,
                             onValueChange = { playerName = it },
                             label = { Text("Seu Nome ou Apelido") },
+                            placeholder = { Text("Digite seu nome...", color = Color(0xFF64748B)) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("player_name_input"),
