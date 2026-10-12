@@ -174,12 +174,16 @@ fun StageCard(
                     Spacer(modifier = Modifier.width(12.dp))
 
                     Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
                             Text(
                                 stage.title,
                                 fontSize = 17.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = if (isUnlocked) Color.White else Color(0xFF94A3B8)
+                                color = if (isUnlocked) Color.White else Color(0xFF94A3B8),
+                                modifier = Modifier.weight(1f, fill = false)
                             )
                             if (!isUnlocked) {
                                 Spacer(modifier = Modifier.width(6.dp))

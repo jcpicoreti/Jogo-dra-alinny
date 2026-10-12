@@ -563,13 +563,13 @@ fun FusionLibraryCard(evolution: EvolutionType, isDiscovered: Boolean, timesUsed
             .fillMaxWidth()
             .testTag("fusion_card_${evolution.name}")
             .border(
-                2.dp,
-                if (isDiscovered) Color(0xFFF59E0B) else Color(0x66F59E0B),
+                if (isDiscovered) 2.dp else 1.dp,
+                if (isDiscovered) Color(0xFFF59E0B) else Color(0x33475569),
                 RoundedCornerShape(14.dp)
             ),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isDiscovered) Color(0xFF1E1B4B) else Color(0xFF151433)
+            containerColor = if (isDiscovered) Color(0xFF1E1B4B) else Color(0xFF131722)
         )
     ) {
         Row(
@@ -581,34 +581,35 @@ fun FusionLibraryCard(evolution: EvolutionType, isDiscovered: Boolean, timesUsed
             Surface(
                 modifier = Modifier.size(56.dp),
                 shape = RoundedCornerShape(14.dp),
-                color = if (isDiscovered) Color(0xFF4338CA) else Color(0x334338CA)
+                color = if (isDiscovered) Color(0xFF4338CA) else Color(0x1FFFFFFF)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    val fusionEmoji = when (evolution) {
-                        EvolutionType.ESCOVA_ULTRASSONICA -> "⚡🪥"
-                        EvolutionType.FIO_LASER_TITANIO -> "⚡🧵"
-                        EvolutionType.TSUNAMI_BICARBONATO -> "🌊💧"
-                        EvolutionType.BROCA_INDELAVEL -> "⚡🔩"
-                        EvolutionType.VENTANIA_CRIOGENICA -> "❄️🧴"
-                        EvolutionType.RAIO_SOLAR_ODONTO -> "☀️🔦"
-                        EvolutionType.BOMBARDEIO_XILITOL -> "💥💣"
-                        EvolutionType.ESPELHO_PRISMATICO -> "🌈🪞"
-                        EvolutionType.NEBULIZADOR_CIRURGICO -> "🌫️💉"
-                        EvolutionType.VORTEX_GRAVITACIONAL -> "🌌🌪️"
-                        EvolutionType.GUILHOTINA_PERIODONTAL -> "⚔️🗡️"
-                        EvolutionType.NEVOA_BIOATIVA -> "🍯💨"
-                        EvolutionType.REDE_CONTENCAO_TITANIO -> "🕸️🎗️"
-                        EvolutionType.EMISSOR_CAVITACAO -> "🔊💥"
-                        EvolutionType.GARRA_EXTRATORA_PESADA -> "🦾🦀"
+                    if (isDiscovered) {
+                        val fusionEmoji = when (evolution) {
+                            EvolutionType.ESCOVA_ULTRASSONICA -> "⚡🪥"
+                            EvolutionType.FIO_LASER_TITANIO -> "⚡🧵"
+                            EvolutionType.TSUNAMI_BICARBONATO -> "🌊💧"
+                            EvolutionType.BROCA_INDELAVEL -> "⚡🔩"
+                            EvolutionType.VENTANIA_CRIOGENICA -> "❄️🧴"
+                            EvolutionType.RAIO_SOLAR_ODONTO -> "☀️🔦"
+                            EvolutionType.BOMBARDEIO_XILITOL -> "💥💣"
+                            EvolutionType.ESPELHO_PRISMATICO -> "🌈🪞"
+                            EvolutionType.NEBULIZADOR_CIRURGICO -> "🌫️💉"
+                            EvolutionType.VORTEX_GRAVITACIONAL -> "🌌🌪️"
+                            EvolutionType.GUILHOTINA_PERIODONTAL -> "⚔️🗡️"
+                            EvolutionType.NEVOA_BIOATIVA -> "🍯💨"
+                            EvolutionType.REDE_CONTENCAO_TITANIO -> "🕸️🎗️"
+                            EvolutionType.EMISSOR_CAVITACAO -> "🔊💥"
+                            EvolutionType.GARRA_EXTRATORA_PESADA -> "🦾🦀"
+                        }
+                        Text(fusionEmoji, fontSize = 24.sp)
+                    } else {
+                        Text("🔒", fontSize = 22.sp)
                     }
-                    Text(fusionEmoji, fontSize = 24.sp)
                 }
             }
 
             Spacer(modifier = Modifier.width(14.dp))
-
-            val baseWeaponName = evolution.baseWeapon.displayName
-            val passiveName = evolution.requiredPassive.displayName
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(
@@ -616,68 +617,93 @@ fun FusionLibraryCard(evolution: EvolutionType, isDiscovered: Boolean, timesUsed
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(evolution.displayName, modifier = Modifier.weight(1f, fill = false), fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color(0xFFFDE047))
+                    Text(
+                        evolution.displayName,
+                        modifier = Modifier.weight(1f, fill = false),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Black,
+                        color = if (isDiscovered) Color(0xFFFDE047) else Color(0xFFCBD5E1)
+                    )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = Color(0xFFD97706)
-                        ) {
-                            Text(
-                                "FUSÃO LENDÁRIA",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Black,
-                                color = Color.White,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                        if (isDiscovered && timesUsed > 0) {
+                    if (isDiscovered) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = Color(0x33F59E0B)
+                                color = Color(0xFFD97706)
                             ) {
                                 Text(
-                                    "Usado: $timesUsed",
+                                    "FUSÃO LENDÁRIA",
                                     fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFFDE047),
-                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                    fontWeight = FontWeight.Black,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
+                            if (timesUsed > 0) {
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = Color(0x33F59E0B)
+                                ) {
+                                    Text(
+                                        "Usado: $timesUsed",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFFDE047),
+                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = Color(0x2294A3B8)
+                        ) {
+                            Text(
+                                "🔒 NÃO DESCOBERTA",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF94A3B8),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(evolution.description, fontSize = 12.sp, color = Color(0xFFE2E8F0), lineHeight = 16.sp)
+                if (isDiscovered) {
+                    val baseWeaponName = evolution.baseWeapon.displayName
+                    val passiveName = evolution.requiredPassive.displayName
 
-                Spacer(modifier = Modifier.height(6.dp))
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = Color(0x447C3AED)
-                ) {
-                    Text(
-                        "🧪 Receita: $baseWeaponName (MAX) + $passiveName",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFFC084FC),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                    )
-                }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(evolution.description, fontSize = 12.sp, color = Color(0xFFE2E8F0), lineHeight = 16.sp)
 
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("💥 Dano: ${evolution.damage.toInt()}", fontSize = 11.sp, color = Color(0xFFFBBF24), fontWeight = FontWeight.Bold)
-                    Text("⏱️ Cooldown: ${evolution.cooldownSeconds}s", fontSize = 11.sp, color = Color(0xFF86EFAC), fontWeight = FontWeight.Bold)
-                    Text("📏 Raio: ${evolution.rangeRadius.toInt()}px", fontSize = 11.sp, color = Color(0xFF93C5FD), fontWeight = FontWeight.Bold)
-                }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(0x447C3AED)
+                    ) {
+                        Text(
+                            "🧪 Receita: $baseWeaponName (MAX) + $passiveName",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFC084FC),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
 
-                if (!isDiscovered) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("💥 Dano: ${evolution.damage.toInt()}", fontSize = 11.sp, color = Color(0xFFFBBF24), fontWeight = FontWeight.Bold)
+                        Text("⏱️ Cooldown: ${evolution.cooldownSeconds}s", fontSize = 11.sp, color = Color(0xFF86EFAC), fontWeight = FontWeight.Bold)
+                        Text("📏 Raio: ${evolution.rangeRadius.toInt()}px", fontSize = 11.sp, color = Color(0xFF93C5FD), fontWeight = FontWeight.Bold)
+                    }
+                } else {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        "💡 Funda $baseWeaponName (Nível 5) + $passiveName em batalha para registrar!",
-                        fontSize = 10.sp,
-                        color = Color(0xFF94A3B8)
+                        "Descubra esta fusão em batalha para revelar seu efeito e receita!",
+                        fontSize = 11.sp,
+                        color = Color(0xFF64748B),
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                     )
                 }
             }

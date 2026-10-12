@@ -7,6 +7,8 @@ import com.example.data.model.ActiveWeapon
 import com.example.data.model.CharacterId
 import com.example.data.model.ClinicUpgradeType
 import com.example.data.model.DamageNumber
+import com.example.data.model.DentalObstacle
+import com.example.data.model.DentalStructure
 import com.example.data.model.EnemyInstance
 import com.example.data.model.EnemyType
 import com.example.data.model.EvolutionType
@@ -14,9 +16,11 @@ import com.example.data.model.GameState
 import com.example.data.model.LevelUpOption
 import com.example.data.model.LootInstance
 import com.example.data.model.LootType
+import com.example.data.model.ObstacleType
 import com.example.data.model.PassiveType
 import com.example.data.model.ProjectileInstance
 import com.example.data.model.StageId
+import com.example.data.model.StructureType
 import com.example.data.model.VisualParticle
 import com.example.data.model.WeaponType
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,7 +39,9 @@ data class RenderSnapshot(
     val projectiles: List<ProjectileInstance> = emptyList(),
     val lootItems: List<LootInstance> = emptyList(),
     val damageNumbers: List<DamageNumber> = emptyList(),
-    val particles: List<VisualParticle> = emptyList()
+    val particles: List<VisualParticle> = emptyList(),
+    val obstacles: List<DentalObstacle> = emptyList(),
+    val structures: List<DentalStructure> = emptyList()
 )
 
 class GameEngine(
@@ -46,6 +52,12 @@ class GameEngine(
     val highestStageUnlocked: Int = 1
 ) {
     val stateLock = Any()
+
+    private val idGen = AtomicLong(1)
+
+    // Battlefield fixtures and obstacles
+    val obstacles = mutableListOf<DentalObstacle>()
+    val structures = mutableListOf<DentalStructure>()
 
     private val _gameState = MutableStateFlow(GameState(characterId = characterId, stageId = stageId))
     val gameState: StateFlow<GameState> = _gameState.asStateFlow()
@@ -86,11 +98,70 @@ class GameEngine(
         val startMaxHp = characterId.baseHp + hpBonus
         val startingWeapon = ActiveWeapon(type = characterId.startingWeapon, level = 1)
 
+        // Generate dental obstacles randomly spread across the stage (balanced, not in excess)
+        val rng = Random(stageId.stageNumber * 31337L + 777L)
+        val obsTypes = ObstacleType.values()
+        var attempts = 0
+        while (obstacles.size < 36 && attempts < 500) {
+            attempts++
+            val ox = rng.nextFloat() * (WORLD_LIMIT * 1.7f) - (WORLD_LIMIT * 0.85f)
+            val oy = rng.nextFloat() * (WORLD_LIMIT * 1.7f) - (WORLD_LIMIT * 0.85f)
+
+            // Keep clear space around player spawn
+            if (sqrt(ox * ox + oy * oy) < 360f) continue
+
+            // Ensure spacing from other obstacles to avoid hindering player path
+            val tooClose = obstacles.any { existing ->
+                val dx = existing.x - ox
+                val dy = existing.y - oy
+                sqrt(dx * dx + dy * dy) < 280f
+            }
+            if (tooClose) continue
+
+            val chosenType = obsTypes[rng.nextInt(obsTypes.size)]
+            obstacles.add(
+                DentalObstacle(
+                    id = idGen.incrementAndGet(),
+                    x = ox,
+                    y = oy,
+                    width = chosenType.defaultWidth,
+                    height = chosenType.defaultHeight,
+                    type = chosenType,
+                    hp = chosenType.maxHp
+                )
+            )
+        }
+
+        // Generate clinic structures spaced widely apart
+        val structTypes = StructureType.values()
+        val roomPositions = listOf(
+            Pair(-1300f, -1100f),
+            Pair(1300f, -1200f),
+            Pair(-1200f, 1300f),
+            Pair(1400f, 1200f)
+        )
+        roomPositions.forEachIndexed { i, pos ->
+            val st = structTypes[i % structTypes.size]
+            structures.add(
+                DentalStructure(
+                    id = "room_$i",
+                    x = pos.first,
+                    y = pos.second,
+                    width = st.defaultWidth,
+                    height = st.defaultHeight,
+                    type = st,
+                    doorDirection = if (i % 2 == 0) "BOTTOM" else "TOP"
+                )
+            )
+        }
+
         _gameState.value = _gameState.value.copy(
             playerHp = startMaxHp,
             playerMaxHp = startMaxHp,
             weapons = listOf(startingWeapon),
-            xpForNextLevel = calculateXpRequirement(1)
+            xpForNextLevel = calculateXpRequirement(1),
+            obstacles = obstacles.toList(),
+            structures = structures.toList()
         )
     }
 
@@ -101,7 +172,6 @@ class GameEngine(
     val damageNumbers = mutableListOf<DamageNumber>()
     val particles = mutableListOf<VisualParticle>()
 
-    private val idGen = AtomicLong(1)
     private var moveDirX = 0f
     private var moveDirY = 0f
 
@@ -149,7 +219,9 @@ class GameEngine(
                 projectiles = projectiles.toList(),
                 lootItems = lootItems.toList(),
                 damageNumbers = damageNumbers.toList(),
-                particles = particles.toList()
+                particles = particles.toList(),
+                obstacles = obstacles.toList(),
+                structures = structures.toList()
             )
         }
     }
@@ -201,6 +273,26 @@ class GameEngine(
             val worldLimit = WORLD_LIMIT
             newPlayerX = newPlayerX.coerceIn(-worldLimit, worldLimit)
             newPlayerY = newPlayerY.coerceIn(-worldLimit, worldLimit)
+
+            // Hitbox collision resolution with dental obstacles (solid fixtures and destructibles)
+            val playerRadius = 16f
+            for (obs in obstacles) {
+                if (!obs.isDestroyed) {
+                    val halfW = obs.width / 2f + playerRadius
+                    val halfH = obs.height / 2f + playerRadius
+                    val dx = newPlayerX - obs.x
+                    val dy = newPlayerY - obs.y
+                    if (kotlin.math.abs(dx) < halfW && kotlin.math.abs(dy) < halfH) {
+                        val overlapX = halfW - kotlin.math.abs(dx)
+                        val overlapY = halfH - kotlin.math.abs(dy)
+                        if (overlapX < overlapY) {
+                            newPlayerX = if (dx > 0) obs.x + halfW else obs.x - halfW
+                        } else {
+                            newPlayerY = if (dy > 0) obs.y + halfH else obs.y - halfH
+                        }
+                    }
+                }
+            }
 
             // Health regen
             if (regenLevel > 0) {
@@ -292,6 +384,47 @@ class GameEngine(
                     }
                 }
 
+                // Check collision with destructible obstacles
+                if (!p.isDead) {
+                    for (obs in obstacles) {
+                        if (!obs.isDestroyed && obs.type.isDestructible) {
+                            val halfW = obs.width / 2f + p.radius
+                            val halfH = obs.height / 2f + p.radius
+                            val dx = p.x - obs.x
+                            val dy = p.y - obs.y
+                            if (kotlin.math.abs(dx) < halfW && kotlin.math.abs(dy) < halfH) {
+                                obs.hp -= p.damage
+                                obs.flashHitTimer = 0.15f
+                                spawnHitParticles(obs.x, obs.y, 4, obs.type.colorHex)
+                                if (obs.hp <= 0f) {
+                                    obs.isDestroyed = true
+                                    val drop = when (obs.type) {
+                                        ObstacleType.FRASCO_FLUOR -> LootType.FLUOR_XP
+                                        ObstacleType.BLOCO_TARTARO -> LootType.CRISTAL_XILITOL
+                                        ObstacleType.AMPOULA_ANESTESICO -> LootType.CAPSULA_ANALGESICO
+                                        ObstacleType.TUBO_PASTA_DENTE -> LootType.MACA_HEAL
+                                        else -> LootType.DENTE_OURO
+                                    }
+                                    lootItems.add(
+                                        LootInstance(
+                                            id = idGen.incrementAndGet(),
+                                            x = obs.x,
+                                            y = obs.y,
+                                            type = drop
+                                        )
+                                    )
+                                    soundManager.playGemPickup()
+                                }
+                                p.pierceLeft--
+                                if (p.pierceLeft <= 0) {
+                                    p.isDead = true
+                                    break
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (p.durationRemaining <= 0f || p.pierceLeft <= 0) {
                     p.isDead = true
                 }
@@ -338,6 +471,19 @@ class GameEngine(
             damageNumbers.removeAll { it.life <= 0f }
             particles.removeAll { it.life <= 0f }
 
+            // Decay flashHitTimer for obstacles
+            obstacles.forEach { obs ->
+                if (obs.flashHitTimer > 0f) {
+                    obs.flashHitTimer = (obs.flashHitTimer - dt).coerceAtLeast(0f)
+                }
+            }
+
+            // Check current clinic structure inside
+            val currentInside = structures.find { s ->
+                kotlin.math.abs(newPlayerX - s.x) < s.width / 2f &&
+                kotlin.math.abs(newPlayerY - s.y) < s.height / 2f
+            }
+
             // Check Milestone Achievements
             if (newGameTime >= 300f) onAchievementTriggered?.invoke("survive_5min")
             if (newGameTime >= 600f) onAchievementTriggered?.invoke("survive_10min")
@@ -354,7 +500,10 @@ class GameEngine(
                 activeBossHpFraction = bossFraction,
                 isFreezeActive = isFrozen,
                 screenShakeX = shakeX,
-                screenShakeY = shakeY
+                screenShakeY = shakeY,
+                obstacles = obstacles.toList(),
+                structures = structures.toList(),
+                currentStructureInside = currentInside
             )
         }
     }

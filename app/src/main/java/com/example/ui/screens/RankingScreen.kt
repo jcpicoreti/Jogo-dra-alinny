@@ -185,12 +185,13 @@ fun RankingItemCard(rank: Int, entry: ScoreEntity) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            entry.stageId,
+                            entry.stageId.replace("STAGE_", "Fase ").replace("_", " "),
                             fontSize = 11.sp,
                             color = Color(0xFF38BDF8),
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
                         Text(" • ", fontSize = 11.sp, color = Color(0xFF64748B))
                         Text(

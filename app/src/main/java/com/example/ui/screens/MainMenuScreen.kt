@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -24,6 +26,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AllInclusive
 import androidx.compose.material.icons.filled.Lock
@@ -62,6 +65,7 @@ import com.example.ui.viewmodel.Screen
 
 @Composable
 fun MainMenuScreen(viewModel: GameViewModel) {
+    val context = LocalContext.current
     val meta by viewModel.playerMeta.collectAsState()
     val selectedChar by viewModel.selectedCharacter.collectAsState()
     val selectedStage by viewModel.selectedStage.collectAsState()
@@ -445,7 +449,54 @@ fun MainMenuScreen(viewModel: GameViewModel) {
                 }
             }
 
-            // 7. Compact Gamepad Footer Tag
+            // 7. Instagram Link to Dra. Alinny Gobetti
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("instagram_link_button")
+                    .clickable {
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.instagram.com/alinny.gobetti/"))
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            // ignore fallback
+                        }
+                    },
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0x33E1306C)),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.2.dp,
+                    Brush.horizontalGradient(
+                        listOf(Color(0xFF833AB4), Color(0xFFFD1D1D), Color(0xFFFCB045))
+                    )
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text("📸", fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "Siga Dra. Alinny Gobetti no Instagram:",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        "@alinny.gobetti",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color(0xFFF9A8D4)
+                    )
+                }
+            }
+
+            // 8. Compact Gamepad Footer Tag
             Surface(
                 shape = RoundedCornerShape(10.dp),
                 color = Color(0x18000000),

@@ -813,7 +813,8 @@ data class ProjectileInstance(
     val isEvolved: Boolean = false,
     val isLaser: Boolean = false,
     val targetEnemyId: Long = 0L,
-    var isDead: Boolean = false
+    var isDead: Boolean = false,
+    val level: Int = 1
 )
 
 data class LootInstance(
@@ -878,6 +879,64 @@ enum class ClinicUpgradeType(
     SORRISO_DE_OURO("gold", "Dentes de Ouro", "Aumenta a quantidade de moedas obtidas por partida.", 5, 100, 1.7f, "+25% Moedas")
 }
 
+enum class ObstacleType(
+    val displayName: String,
+    val colorHex: Long,
+    val defaultWidth: Float,
+    val defaultHeight: Float,
+    val maxHp: Float = 300f,
+    val isDestructible: Boolean = false
+) {
+    DENTE_MOLAR_GIGANTE("Molar Gigante", 0xFFFFFFFF, 80f, 80f, 500f, false),
+    CADEIRA_ODONTO("Cadeira Odontológica", 0xFF0284C7, 100f, 60f, 400f, false),
+    EQUIPO_CLINICO("Equipo Clínico", 0xFF38BDF8, 70f, 70f, 350f, false),
+    REATOR_AUTOCLAVE("Autoclave Esterilizadora", 0xFF64748B, 65f, 65f, 400f, false),
+    REFLETOR_ODONTO("Refletor de LED", 0xFFFDE047, 50f, 50f, 250f, false),
+    RAIO_X_COLUNA("Coluna de Raio-X", 0xFF475569, 55f, 75f, 300f, false),
+    BRAQUETE_TITANIO("Braquete de Titânio", 0xFF94A3B8, 60f, 60f, 350f, false),
+    BLOCO_TARTARO("Bloco de Tártaro Petrificado", 0xFF78350F, 70f, 70f, 250f, true),
+    FRASCO_FLUOR("Frasco de Gel Flúor", 0xFF10B981, 50f, 50f, 150f, true),
+    CAIXA_GAZE("Caixa de Gaze Cirúrgica", 0xFFF8FAFC, 50f, 50f, 120f, true),
+    ESTOJO_INSTRUMENTAL("Estojo de Pinças", 0xFFCBD5E1, 60f, 45f, 180f, true),
+    TUBO_PASTA_DENTE("Tubo de Pasta Profilática", 0xFF06B6D4, 55f, 55f, 160f, true),
+    AMPOULA_ANESTESICO("Ampola de Anestésico", 0xFFA855F7, 45f, 60f, 140f, true)
+}
+
+data class DentalObstacle(
+    val id: Long,
+    var x: Float,
+    var y: Float,
+    val width: Float,
+    val height: Float,
+    val type: ObstacleType,
+    var hp: Float = type.maxHp,
+    var flashHitTimer: Float = 0f,
+    var isDestroyed: Boolean = false
+)
+
+enum class StructureType(
+    val displayName: String,
+    val colorHex: Long,
+    val defaultWidth: Float = 220f,
+    val defaultHeight: Float = 170f
+) {
+    CONSULTORIO_CABINE("Consultório Odontológico", 0xFF0284C7, 220f, 170f),
+    SALA_ESTERILIZACAO("Sala de Esterilização", 0xFF7C3AED, 200f, 160f),
+    ARMARIO_INSUMOS("Almoxarifado de Insumos", 0xFFD97706, 190f, 150f),
+    CABINE_RAIO_X("Cabine de Raio-X Blindada", 0xFF0D9488, 200f, 160f),
+    LABORATORIO_PROTESE("Laboratório de Prótese", 0xFFE11D48, 210f, 170f)
+}
+
+data class DentalStructure(
+    val id: String,
+    val x: Float,
+    val y: Float,
+    val width: Float,
+    val height: Float,
+    val type: StructureType,
+    val doorDirection: String = "BOTTOM"
+)
+
 data class GameState(
     val characterId: CharacterId = CharacterId.DRA_ALINNY,
     val stageId: StageId = StageId.STAGE_1_ESMALTE,
@@ -905,6 +964,9 @@ data class GameState(
     val chestCoins: Int = 0,
     val isFreezeActive: Boolean = false,
     val screenShakeX: Float = 0f,
-    val screenShakeY: Float = 0f
+    val screenShakeY: Float = 0f,
+    val obstacles: List<DentalObstacle> = emptyList(),
+    val structures: List<DentalStructure> = emptyList(),
+    val currentStructureInside: DentalStructure? = null
 )
 
