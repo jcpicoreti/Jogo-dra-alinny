@@ -62,20 +62,24 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.R
 import com.example.data.model.ActivePassive
 import com.example.data.model.ActiveWeapon
 import com.example.data.model.EvolutionType
 import com.example.data.model.GameState
 import com.example.data.model.LevelUpOption
 import com.example.data.model.PassiveType
+import com.example.data.model.StageId
 import com.example.data.model.WeaponType
 import com.example.ui.graphics.DentalCanvasRenderer
 import com.example.ui.viewmodel.GameViewModel
@@ -87,6 +91,16 @@ fun GameScreen(viewModel: GameViewModel) {
     val engine = viewModel.gameEngine ?: return
     val gameState by viewModel.activeGameState.collectAsState()
     val state = gameState ?: return
+
+    val bgDrawableId = when (state.stageId) {
+        StageId.STAGE_1_ESMALTE -> R.drawable.bg_esmalte
+        StageId.STAGE_2_GENGIVA -> R.drawable.bg_gengiva
+        StageId.STAGE_3_CANAL -> R.drawable.bg_canal
+        StageId.STAGE_4_APARELHO -> R.drawable.bg_aparelho
+        StageId.STAGE_5_TARTARO -> R.drawable.bg_tartaro
+        StageId.STAGE_INFINITE -> R.drawable.bg_infinito
+    }
+    val backgroundImage = ImageBitmap.imageResource(id = bgDrawableId)
 
     BackHandler {
         viewModel.togglePause()
@@ -149,6 +163,7 @@ fun GameScreen(viewModel: GameViewModel) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             DentalCanvasRenderer.renderGameWorld(
                 drawScope = this,
+                bgImage = backgroundImage,
                 gameState = state,
                 enemies = snapshot.enemies,
                 projectiles = snapshot.projectiles,

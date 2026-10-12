@@ -36,6 +36,7 @@ object DentalCanvasRenderer {
 
     fun renderGameWorld(
         drawScope: DrawScope,
+        bgImage: androidx.compose.ui.graphics.ImageBitmap,
         gameState: GameState,
         enemies: List<EnemyInstance>,
         projectiles: List<ProjectileInstance>,
@@ -53,7 +54,7 @@ object DentalCanvasRenderer {
         val cameraY = canvasHeight / 2f - gameState.playerY + gameState.screenShakeY
 
         // 1. Draw Themed Background Arena with Rich Patterns
-        drawArenaFloor(drawScope, gameState.stageId, cameraX, cameraY, canvasWidth, canvasHeight, gameState.gameTimeSeconds)
+        drawArenaFloor(drawScope, bgImage, gameState.stageId, cameraX, cameraY, canvasWidth, canvasHeight, gameState.gameTimeSeconds)
 
         // 1.2 Draw Stage Boundary Limits (Visible Enamel Barrier Walls & Danger Striping)
         drawStageBoundaries(drawScope, cameraX, cameraY, canvasWidth, canvasHeight, gameState.gameTimeSeconds, gameState.stageId)
@@ -418,6 +419,7 @@ object DentalCanvasRenderer {
 
     private fun drawArenaFloor(
         drawScope: DrawScope,
+        bgImage: androidx.compose.ui.graphics.ImageBitmap,
         stage: StageId,
         cameraX: Float,
         cameraY: Float,
@@ -426,128 +428,32 @@ object DentalCanvasRenderer {
         time: Float
     ) {
         val groundColor = Color(stage.groundColorHex)
-        val themeColor = Color(stage.themeColorHex)
 
-        // Base ground
+        // Base ground (fallback behind images)
         drawScope.drawRect(color = groundColor, size = Size(width, height))
 
-        val tileSize = 90f
-        val startX = (cameraX % tileSize) - tileSize
-        val startY = (cameraY % tileSize) - tileSize
+        val bgWidth = bgImage.width.toFloat()
+        val bgHeight = bgImage.height.toFloat()
 
-        var x = startX
-        while (x < width + tileSize) {
-            drawScope.drawLine(
-                color = themeColor.copy(alpha = 0.15f),
-                start = Offset(x, 0f),
-                end = Offset(x, height),
-                strokeWidth = 2f
-            )
-            x += tileSize
-        }
+        // Calcula o deslocamento inicial baseado na câmera para dar a ilusão de movimento
+        // Usamos módulo para garantir que sempre comecemos a desenhar pouco antes do canto da tela
+        val startX = (cameraX % bgWidth)
+        val startXAdjusted = if (startX > 0) startX - bgWidth else startX
+        
+        val startY = (cameraY % bgHeight)
+        val startYAdjusted = if (startY > 0) startY - bgHeight else startY
 
-        var y = startY
-        while (y < height + tileSize) {
-            drawScope.drawLine(
-                color = themeColor.copy(alpha = 0.15f),
-                start = Offset(0f, y),
-                end = Offset(width, y),
-                strokeWidth = 2f
-            )
-            y += tileSize
-        }
-
-        // Themed floor details per stage
-        when (stage) {
-            StageId.STAGE_1_ESMALTE -> {
-                // Shiny tooth enamel sparkles on tiles
-                val sparkleStep = tileSize * 2
-                var sx = (cameraX % sparkleStep) - sparkleStep
-                while (sx < width + sparkleStep) {
-                    var sy = (cameraY % sparkleStep) - sparkleStep
-                    while (sy < height + sparkleStep) {
-                        drawScope.drawCircle(color = Color(0x3338BDF8), radius = 6f, center = Offset(sx + 45f, sy + 45f))
-                        drawScope.drawCircle(color = Color(0x55FFFFFF), radius = 2f, center = Offset(sx + 45f, sy + 45f))
-                        sy += sparkleStep
-                    }
-                    sx += sparkleStep
-                }
+        var x = startXAdjusted
+        while (x < width + bgWidth) {
+            var y = startYAdjusted
+            while (y < height + bgHeight) {
+                drawScope.drawImage(
+                    image = bgImage,
+                    topLeft = Offset(x, y)
+                )
+                y += bgHeight
             }
-            StageId.STAGE_2_GENGIVA -> {
-                // Soft vascular cell micro-patterns
-                val step = tileSize * 1.5f
-                var sx = (cameraX % step) - step
-                while (sx < width + step) {
-                    var sy = (cameraY % step) - step
-                    while (sy < height + step) {
-                        drawScope.drawOval(color = Color(0x22F43F5E), topLeft = Offset(sx + 15f, sy + 15f), size = Size(20f, 12f))
-                        sy += step
-                    }
-                    sx += step
-                }
-            }
-            StageId.STAGE_3_CANAL -> {
-                // Pulp canal bio-tubules
-                val step = tileSize * 2.5f
-                var sx = (cameraX % step) - step
-                while (sx < width + step) {
-                    var sy = (cameraY % step) - step
-                    while (sy < height + step) {
-                        drawScope.drawCircle(color = Color(0x229333EA), radius = 16f, center = Offset(sx + 50f, sy + 50f))
-                        drawScope.drawCircle(color = Color(0x33A855F7), radius = 8f, center = Offset(sx + 50f, sy + 50f))
-                        sy += step
-                    }
-                    sx += step
-                }
-            }
-            StageId.STAGE_4_APARELHO -> {
-                // Metallic archwires running across floor
-                val wireStep = tileSize * 3
-                var sy = (cameraY % wireStep) - wireStep
-                while (sy < height + wireStep) {
-                    drawScope.drawLine(
-                        color = Color(0x44CBD5E1),
-                        start = Offset(0f, sy + 30f),
-                        end = Offset(width, sy + 30f),
-                        strokeWidth = 3f
-                    )
-                    // Brackets
-                    var bx = (cameraX % (tileSize * 1.5f)) - tileSize
-                    while (bx < width + tileSize) {
-                        drawScope.drawRect(color = Color(0x6664748B), topLeft = Offset(bx + 20f, sy + 24f), size = Size(14f, 12f))
-                        bx += (tileSize * 1.5f)
-                    }
-                    sy += wireStep
-                }
-            }
-            StageId.STAGE_5_TARTARO -> {
-                // Calcified stone runes and cracks
-                val step = tileSize * 2f
-                var sx = (cameraX % step) - step
-                while (sx < width + step) {
-                    var sy = (cameraY % step) - step
-                    while (sy < height + step) {
-                        drawScope.drawRect(color = Color(0x2278716C), topLeft = Offset(sx + 20f, sy + 20f), size = Size(32f, 32f))
-                        sy += step
-                    }
-                    sx += step
-                }
-            }
-            StageId.STAGE_INFINITE -> {
-                // High-tech clinic linoleum with glowing blue accents
-                val step = tileSize * 2f
-                var sx = (cameraX % step) - step
-                while (sx < width + step) {
-                    var sy = (cameraY % step) - step
-                    while (sy < height + step) {
-                        // Blue medical cross
-                        drawScope.drawRect(color = Color(0x220284C7), topLeft = Offset(sx + 35f, sy + 25f), size = Size(10f, 30f))
-                        drawScope.drawRect(color = Color(0x220284C7), topLeft = Offset(sx + 25f, sy + 35f), size = Size(30f, 10f))
-                        sy += step
-                    }
-                    sx += step
-                }
-            }
+            x += bgWidth
         }
     }
 

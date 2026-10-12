@@ -1156,13 +1156,13 @@ class GameEngine(
             } else {
                 val dropRoll = Random.nextFloat()
                 when {
-                    dropRoll < 0.025f -> LootType.CAPSULA_ANALGESICO
-                    dropRoll < 0.055f -> LootType.MACA_HEAL
-                    dropRoll < 0.075f -> LootType.BAU_PRATA
-                    dropRoll < 0.090f -> LootType.PASTILHA_VACUUM
-                    dropRoll < 0.105f -> LootType.ENXAGUANTE_FREEZE
-                    dropRoll < 0.120f -> LootType.BAU_DOURADO
-                    dropRoll < 0.200f -> LootType.DENTE_OURO
+                    dropRoll < 0.025f -> LootType.CAPSULA_ANALGESICO // 2.5%
+                    dropRoll < 0.055f -> LootType.MACA_HEAL // 3.0%
+                    dropRoll < 0.060f -> LootType.BAU_PRATA // 0.5% (reduzido de 2.0%)
+                    dropRoll < 0.075f -> LootType.PASTILHA_VACUUM // 1.5%
+                    dropRoll < 0.090f -> LootType.ENXAGUANTE_FREEZE // 1.5%
+                    dropRoll < 0.093f -> LootType.BAU_DOURADO // 0.3% (reduzido de 1.5%)
+                    dropRoll < 0.173f -> LootType.DENTE_OURO // 8.0%
                     dropRoll < 0.450f -> enemy.type.xpDrop
                     else -> LootType.FLUOR_XP
                 }
