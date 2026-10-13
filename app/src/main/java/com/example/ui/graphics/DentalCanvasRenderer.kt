@@ -794,9 +794,28 @@ object DentalCanvasRenderer {
         }
 
         when (enemy.type) {
+            EnemyType.BACTERIA_ATIRADORA -> {
+                // Bactéria Cuspidora (Atiradora)
+                // Corpo principal
+                drawScope.drawCircle(color = Color(0xFF4C0519), radius = enemy.radius + 2f, center = Offset(x, y + wobble)) // Borda escura
+                drawScope.drawCircle(color = hitColor, radius = enemy.radius, center = Offset(x, y + wobble))
+                // Boca atiradora
+                drawScope.drawOval(color = Color(0xFF1E1B4B), topLeft = Offset(x - 6f, y + 2f + wobble), size = Size(12f, 10f))
+                // Olhos
+                drawScope.drawCircle(color = Color.White, radius = 4f, center = Offset(x - 5f, y - 5f + wobble))
+                drawScope.drawCircle(color = Color.White, radius = 4f, center = Offset(x + 5f, y - 5f + wobble))
+                drawScope.drawCircle(color = Color.Red, radius = 2f, center = Offset(x - 5f, y - 5f + wobble))
+                drawScope.drawCircle(color = Color.Red, radius = 2f, center = Offset(x + 5f, y - 5f + wobble))
+            }
             EnemyType.STREPTOCOCCUS -> {
                 // Streptococcus mutans: multi-segmented glossy green chain
                 val r = enemy.radius * 0.55f
+                
+                // Margem escurecida (Contorno)
+                drawScope.drawCircle(color = Color(0xFF064E3B), radius = r + 2f, center = Offset(x - r * 0.8f, y + wobble))
+                drawScope.drawCircle(color = Color(0xFF064E3B), radius = r + 2f, center = Offset(x + r * 0.8f, y + wobble))
+                drawScope.drawCircle(color = Color(0xFF064E3B), radius = (r * 1.15f) + 2f, center = Offset(x, y - r * 0.6f + wobble))
+
                 drawScope.drawCircle(color = hitColor, radius = r, center = Offset(x - r * 0.8f, y + wobble))
                 drawScope.drawCircle(color = hitColor, radius = r, center = Offset(x + r * 0.8f, y + wobble))
                 drawScope.drawCircle(color = hitColor, radius = r * 1.15f, center = Offset(x, y - r * 0.6f + wobble))
@@ -816,6 +835,13 @@ object DentalCanvasRenderer {
             }
 
             EnemyType.PLACA_AMARELA -> {
+                // Margem escurecida
+                drawScope.drawRoundRect(
+                    color = Color(0xFF854D0E), // Marrom escuro
+                    topLeft = Offset(x - enemy.radius - 2f, y - enemy.radius + wobble - 2f),
+                    size = Size(enemy.radius * 2f + 4f, enemy.radius * 2f + 4f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(enemy.radius * 0.7f, enemy.radius * 0.7f)
+                )
                 // Plaque blob: translucent drippy gooey amoeba
                 drawScope.drawRoundRect(
                     color = hitColor,
@@ -824,7 +850,9 @@ object DentalCanvasRenderer {
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(enemy.radius * 0.7f, enemy.radius * 0.7f)
                 )
                 // Dripping bottom blobs
+                drawScope.drawCircle(color = Color(0xFF854D0E), radius = enemy.radius * 0.35f + 2f, center = Offset(x - 6f, y + enemy.radius * 0.8f + wobble))
                 drawScope.drawCircle(color = hitColor, radius = enemy.radius * 0.35f, center = Offset(x - 6f, y + enemy.radius * 0.8f + wobble))
+                drawScope.drawCircle(color = Color(0xFF854D0E), radius = enemy.radius * 0.25f + 2f, center = Offset(x + 8f, y + enemy.radius * 0.7f + wobble))
                 drawScope.drawCircle(color = hitColor, radius = enemy.radius * 0.25f, center = Offset(x + 8f, y + enemy.radius * 0.7f + wobble))
 
                 // Googly cartoon eyes
@@ -836,6 +864,11 @@ object DentalCanvasRenderer {
 
             EnemyType.ESPIROQUETA -> {
                 // Spirochete: Fast wiggly corkscrew bug
+                drawScope.drawOval(
+                    color = Color(0xFF7C2D12),
+                    topLeft = Offset(x - enemy.radius * 0.6f - 2f, y - enemy.radius * 1.4f + wobble - 2f),
+                    size = Size(enemy.radius * 1.2f + 4f, enemy.radius * 2.8f + 4f)
+                )
                 drawScope.drawOval(
                     color = hitColor,
                     topLeft = Offset(x - enemy.radius * 0.6f, y - enemy.radius * 1.4f + wobble),
@@ -850,6 +883,7 @@ object DentalCanvasRenderer {
 
             EnemyType.ACIDO_CORROSIVO -> {
                 // Purple corrosive droplet
+                drawScope.drawCircle(color = Color(0xFF4C1D95), radius = enemy.radius + 2f, center = Offset(x, y + wobble))
                 drawScope.drawCircle(color = hitColor, radius = enemy.radius, center = Offset(x, y + wobble))
                 drawScope.drawCircle(color = Color(0xFFC084FC), radius = enemy.radius * 0.5f, center = Offset(x - enemy.radius * 0.3f, y - enemy.radius * 0.3f + wobble))
                 drawScope.drawCircle(color = Color.White, radius = 2.5f, center = Offset(x - enemy.radius * 0.4f, y - enemy.radius * 0.4f + wobble))
@@ -857,6 +891,12 @@ object DentalCanvasRenderer {
 
             EnemyType.TARTARO_MINION -> {
                 // Hard rock calculus / tartar golem
+                drawScope.drawRoundRect(
+                    color = Color(0xFF292524),
+                    topLeft = Offset(x - enemy.radius - 2f, y - enemy.radius + wobble - 2f),
+                    size = Size(enemy.radius * 2f + 4f, enemy.radius * 2f + 4f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                )
                 drawScope.drawRoundRect(
                     color = hitColor,
                     topLeft = Offset(x - enemy.radius, y - enemy.radius + wobble),

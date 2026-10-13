@@ -72,6 +72,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _selectedStage = MutableStateFlow(StageId.STAGE_1_ESMALTE)
     val selectedStage: StateFlow<StageId> = _selectedStage.asStateFlow()
+    
+    private val _selectedDifficulty = MutableStateFlow(com.example.data.model.Difficulty.NORMAL)
+    val selectedDifficulty: StateFlow<com.example.data.model.Difficulty> = _selectedDifficulty.asStateFlow()
 
     // Persistent data flows
     val highScores = repository.getHighScores()
@@ -173,13 +176,18 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun startMatch(characterId: CharacterId = _selectedCharacter.value, stageId: StageId = _selectedStage.value) {
+    fun selectDifficulty(difficulty: com.example.data.model.Difficulty) {
+        _selectedDifficulty.value = difficulty
+    }
+
+    fun startMatch(characterId: CharacterId = _selectedCharacter.value, stageId: StageId = _selectedStage.value, difficulty: com.example.data.model.Difficulty = _selectedDifficulty.value) {
         _selectedCharacter.value = characterId
         _selectedStage.value = stageId
+        _selectedDifficulty.value = difficulty
 
         val upgradesList = clinicUpgrades.value
         val highestUnlocked = playerMeta.value?.highestStageUnlocked ?: 1
-        val engine = GameEngine(characterId, stageId, soundManager, upgradesList, highestUnlocked)
+        val engine = GameEngine(characterId, stageId, soundManager, upgradesList, highestUnlocked, difficulty)
         gameEngine = engine
         _activeGameState.value = engine.gameState.value
 
@@ -190,6 +198,14 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 stopGameLoop()
                 if (isVictorious) {
                     _currentScreen.value = Screen.Victory(kills, timeSec, coinsEarned, currentLevel)
+                    
+                    // Avança automaticamente para a próxima fase se disponível
+                    val nextStageIndex = StageId.values().indexOf(stageId) + 1
+                    if (nextStageIndex < StageId.values().size) {
+                        val nextStage = StageId.values()[nextStageIndex]
+                        // We check if it's unlocked using the updated meta later or we assume victory unlocks it if applicable
+                        _selectedStage.value = nextStage
+                    }
                 } else {
                     _currentScreen.value = Screen.GameOver(kills, timeSec, coinsEarned, currentLevel)
                 }

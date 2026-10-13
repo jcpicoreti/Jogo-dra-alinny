@@ -39,6 +39,12 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.VolumeMute
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -369,46 +375,47 @@ fun GameScreen(viewModel: GameViewModel) {
                     }
                 }
             } else {
-                val gameTime = state.gameTimeSeconds
-                val nextBossSeconds = when {
-                    gameTime < 150f -> (150f - gameTime).toInt()
-                    gameTime < 270f -> (270f - gameTime).toInt()
-                    else -> 0
-                }
-                val isElitePhase = gameTime in 210f..269f
+                val nextBossSeconds = state.nextBossTimeRemaining
+                var isElitePhase = false
 
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isElitePhase) Color(0xDD7C2D12) else Color(0x66000000),
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            if (isElitePhase) Color(0xFFF97316) else Color(0x33FFFFFF)
-                        )
+                if (state.stageId != StageId.STAGE_INFINITE) {
+                    isElitePhase = (nextBossSeconds <= 90) && (state.gameTimeSeconds > 100f) && !state.isGameOver
+                }
+
+                if (nextBossSeconds > 0) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isElitePhase) Color(0xDD7C2D12) else Color(0x66000000),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (isElitePhase) Color(0xFFF97316) else Color(0x33FFFFFF)
+                            )
                         ) {
-                            Text(
-                                if (isElitePhase) "💀 HORDA ELITE PRÓ-CHEFE!" else "⏰ Próximo Chefe em:",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isElitePhase) Color(0xFFFED7AA) else Color(0xFF93C5FD)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            val bMin = nextBossSeconds / 60
-                            val bSec = nextBossSeconds % 60
-                            Text(
-                                String.format("%02d:%02d", bMin, bSec),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Black,
-                                color = if (isElitePhase) Color(0xFFFDE047) else Color.White
-                            )
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    if (isElitePhase) "💀 HORDA ELITE PRÓ-CHEFE!" else "⏰ Próximo Chefe em:",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isElitePhase) Color(0xFFFED7AA) else Color(0xFF93C5FD)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                val bMin = nextBossSeconds / 60
+                                val bSec = nextBossSeconds % 60
+                                Text(
+                                    String.format("%02d:%02d", bMin, bSec),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = if (isElitePhase) Color(0xFFFDE047) else Color.White
+                                )
+                            }
                         }
                     }
                 }
@@ -621,17 +628,31 @@ fun LevelUpChoiceCard(option: LevelUpOption, onClick: () -> Unit) {
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Icon
-                val iconStr = when (option) {
-                    is LevelUpOption.NewWeapon -> "🪥"
-                    is LevelUpOption.UpgradeWeapon -> "⬆️"
-                    is LevelUpOption.NewPassive -> "🛡️"
-                    is LevelUpOption.UpgradePassive -> "⭐"
-                    is LevelUpOption.EvolveWeapon -> "⚡"
-                    is LevelUpOption.HealthBonus -> "❤️"
-                    is LevelUpOption.CoinBonus -> "🦷"
+                // Icon (Material Design with styling)
+                val iconData: Pair<androidx.compose.ui.graphics.vector.ImageVector, Color> = when (option) {
+                    is LevelUpOption.NewWeapon -> Pair(Icons.Default.Info, Color(0xFF3B82F6))
+                    is LevelUpOption.UpgradeWeapon -> Pair(Icons.Default.KeyboardArrowUp, Color(0xFF38BDF8))
+                    is LevelUpOption.NewPassive -> Pair(Icons.Default.Info, Color(0xFF10B981))
+                    is LevelUpOption.UpgradePassive -> Pair(Icons.Default.Star, Color(0xFF34D399))
+                    is LevelUpOption.EvolveWeapon -> Pair(Icons.Default.Warning, Color(0xFFF59E0B))
+                    is LevelUpOption.HealthBonus -> Pair(Icons.Default.Favorite, Color(0xFFEF4444))
+                    is LevelUpOption.CoinBonus -> Pair(Icons.Default.ShoppingCart, Color(0xFFFBBF24))
                 }
-                Text(iconStr, fontSize = 24.sp)
+                
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .background(iconData.second.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                        .border(1.dp, iconData.second, RoundedCornerShape(8.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = iconData.first,
+                        contentDescription = "Icon",
+                        tint = iconData.second,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Column(modifier = Modifier.weight(1f)) {

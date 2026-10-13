@@ -136,7 +136,7 @@ fun RankingItemCard(rank: Int, entry: ScoreEntity) {
 
     val minutes = entry.timeSurvivedSeconds / 60
     val seconds = entry.timeSurvivedSeconds % 60
-    val timeFormatted = String.format("%02d:%02d", minutes, seconds)
+    val timeFormatted = String.format(java.util.Locale.getDefault(), "%02d:%02d", minutes, seconds)
 
     Card(
         modifier = Modifier.fillMaxWidth(),

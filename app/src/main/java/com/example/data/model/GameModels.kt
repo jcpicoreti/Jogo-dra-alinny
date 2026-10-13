@@ -54,7 +54,7 @@ enum class CharacterId(
     JULIO(
         displayName = "Julio",
         title = "Militar da Marinha",
-        description = "Oficial da marinha com disciplina de aço. Higiene bucal tática de alta resistência.",
+        description = "Militar da marinha com disciplina de aço. Higiene bucal tática de alta resistência.",
         baseHp = 160f,
         baseSpeed = 0.9f,
         baseDamageMultiplier = 1.25f,
@@ -89,6 +89,17 @@ enum class CharacterId(
     )
 }
 
+enum class Difficulty(
+    val displayName: String,
+    val hpMultiplier: Float,
+    val dmgMultiplier: Float,
+    val colorHex: Long
+) {
+    FACIL("Fácil", 0.8f, 0.8f, 0xFF22C55E),
+    NORMAL("Normal", 1.0f, 1.0f, 0xFF3B82F6),
+    DIFICIL("Difícil", 1.5f, 1.5f, 0xFFEF4444)
+}
+
 // Stages
 enum class StageId(
     val stageNumber: Int,
@@ -104,7 +115,7 @@ enum class StageId(
         stageNumber = 1,
         title = "Superfície do Esmalte",
         subtitle = "Primeira linha de defesa dentária",
-        durationSeconds = 300,
+        durationSeconds = 600,
         bossName = "Cárie Gigante Negra",
         bossDescription = "Uma cárie invasiva armada com ácidos corrosivos e tentáculos de placa.",
         themeColorHex = 0xFF0284C7,
@@ -114,7 +125,7 @@ enum class StageId(
         stageNumber = 2,
         title = "Sulco Gengival",
         subtitle = "Zona vascularizada e inflamada",
-        durationSeconds = 300,
+        durationSeconds = 600,
         bossName = "Gengivite Furiosa",
         bossDescription = "Monstro pulsante avermelhado que espalha inflamação e toxinas periódicas.",
         themeColorHex = 0xFFE11D48,
@@ -124,7 +135,7 @@ enum class StageId(
         stageNumber = 3,
         title = "Canal Radicular",
         subtitle = "As profundezas da polpa dentária",
-        durationSeconds = 300,
+        durationSeconds = 600,
         bossName = "Abcesso Periapical",
         bossDescription = "Bactéria anaeróbia gigante com bolhas de pus tóxico e ondas de choque.",
         themeColorHex = 0xFF7C3AED,
@@ -134,7 +145,7 @@ enum class StageId(
         stageNumber = 4,
         title = "Arena dos Braquetes",
         subtitle = "Labirinto de fios e elásticos metálicos",
-        durationSeconds = 300,
+        durationSeconds = 600,
         bossName = "Biofilme Oculto de Braquete",
         bossDescription = "Aglomerado de restos de comida calcificados escondido entre os fios do aparelho.",
         themeColorHex = 0xFF0D9488,
@@ -144,7 +155,7 @@ enum class StageId(
         stageNumber = 5,
         title = "Cidadela do Tártaro",
         subtitle = "A fortaleza de cálculo dental petrificado",
-        durationSeconds = 300,
+        durationSeconds = 600,
         bossName = "Tártaro Titânico & Siso Sombrio",
         bossDescription = "O soberano das infecções orais, couraça de pedra de tártaro e siso impactado!",
         themeColorHex = 0xFFD97706,
@@ -656,7 +667,8 @@ enum class EnemyType(
     val radius: Float,
     val colorHex: Long,
     val xpDrop: LootType = LootType.FLUOR_XP,
-    val isElite: Boolean = false
+    val isElite: Boolean = false,
+    val isShooter: Boolean = false
 ) {
     STREPTOCOCCUS(
         displayName = "Streptococcus Mutans",
@@ -664,7 +676,7 @@ enum class EnemyType(
         baseSpeed = 1.1f,
         baseDamage = 8f,
         radius = 16f,
-        colorHex = 0xFF22C55E
+        colorHex = 0xFF4ADE80 // Verde claro (destaca mais)
     ),
     PLACA_AMARELA(
         displayName = "Monstro de Placa Amarela",
@@ -672,7 +684,7 @@ enum class EnemyType(
         baseSpeed = 0.85f,
         baseDamage = 12f,
         radius = 20f,
-        colorHex = 0xFFEAB308
+        colorHex = 0xFFFDE047 // Amarelo vibrante
     ),
     ESPIROQUETA(
         displayName = "Espiroqueta Rápida",
@@ -680,7 +692,7 @@ enum class EnemyType(
         baseSpeed = 1.8f,
         baseDamage = 7f,
         radius = 14f,
-        colorHex = 0xFFF97316
+        colorHex = 0xFFF97316 // Laranja intenso
     ),
     ACIDO_CORROSIVO(
         displayName = "Gota de Ácido Bacteriano",
@@ -688,7 +700,7 @@ enum class EnemyType(
         baseSpeed = 1.25f,
         baseDamage = 15f,
         radius = 18f,
-        colorHex = 0xFFA855F7
+        colorHex = 0xFFC084FC // Roxo brilhante
     ),
     TARTARO_MINION(
         displayName = "Casca de Tártaro Duro",
@@ -696,8 +708,17 @@ enum class EnemyType(
         baseSpeed = 0.65f,
         baseDamage = 18f,
         radius = 24f,
-        colorHex = 0xFF78716C,
+        colorHex = 0xFFA8A29E, // Cinza claro (contrasta com marrom)
         xpDrop = LootType.CRISTAL_XILITOL
+    ),
+    BACTERIA_ATIRADORA(
+        displayName = "Bactéria Cuspidora",
+        baseHp = 30f,
+        baseSpeed = 0.75f,
+        baseDamage = 10f,
+        radius = 17f,
+        colorHex = 0xFFF43F5E, // Rosa avermelhado
+        isShooter = true
     ),
     // Pre-Boss Elite Enemies (Drop Level-Up Mega Chests!)
     ELITE_SUPER_BACTERIA(
@@ -814,7 +835,8 @@ data class ProjectileInstance(
     val isLaser: Boolean = false,
     val targetEnemyId: Long = 0L,
     var isDead: Boolean = false,
-    val level: Int = 1
+    val level: Int = 1,
+    val isEnemyProjectile: Boolean = false
 )
 
 data class LootInstance(
@@ -967,6 +989,7 @@ data class GameState(
     val screenShakeY: Float = 0f,
     val obstacles: List<DentalObstacle> = emptyList(),
     val structures: List<DentalStructure> = emptyList(),
-    val currentStructureInside: DentalStructure? = null
+    val currentStructureInside: DentalStructure? = null,
+    val nextBossTimeRemaining: Int = 300
 )
 

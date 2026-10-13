@@ -47,6 +47,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.BorderStroke
 import com.example.data.model.StageId
 import com.example.ui.viewmodel.GameViewModel
 import com.example.ui.viewmodel.Screen
@@ -59,9 +60,11 @@ fun StageSelectScreen(viewModel: GameViewModel) {
     }
 
     val selectedStage by viewModel.selectedStage.collectAsState()
+    val selectedDifficulty by viewModel.selectedDifficulty.collectAsState()
     val meta by viewModel.playerMeta.collectAsState()
     val highestUnlocked = meta?.highestStageUnlocked ?: 1
     val stages = StageId.values()
+    val difficulties = com.example.data.model.Difficulty.values()
 
     Scaffold(
         topBar = {
@@ -80,30 +83,77 @@ fun StageSelectScreen(viewModel: GameViewModel) {
             )
         }
     ) { padding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .background(Color(0xFF0F172A))
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+                .padding(16.dp)
         ) {
-            items(stages) { stageItem ->
-                val isUnlocked = stageItem.stageNumber <= highestUnlocked
-                val isSelected = selectedStage == stageItem && isUnlocked
-                val prevStage = stages.find { it.stageNumber == stageItem.stageNumber - 1 }
-
-                StageCard(
-                    stage = stageItem,
-                    isSelected = isSelected,
-                    isUnlocked = isUnlocked,
-                    previousStageName = prevStage?.title,
-                    onSelect = {
-                        if (isUnlocked) {
-                            viewModel.selectStage(stageItem)
-                        }
+            Text(
+                "Nível de Dificuldade:",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                difficulties.forEach { diff ->
+                    val isSelectedDiff = selectedDifficulty == diff
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 4.dp)
+                            .clickable { viewModel.selectDifficulty(diff) },
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isSelectedDiff) Color(diff.colorHex) else Color(0xFF1E293B)
+                        ),
+                        border = if (isSelectedDiff) BorderStroke(2.dp, Color.White) else BorderStroke(1.dp, Color(0xFF334155))
+                    ) {
+                        Text(
+                            text = diff.displayName,
+                            color = Color.White,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(),
+                            fontWeight = if (isSelectedDiff) FontWeight.Bold else FontWeight.Normal
+                        )
                     }
-                )
+                }
+            }
+            
+            Text(
+                "Selecionar Área Clínica:",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                items(stages) { stageItem ->
+                    val isUnlocked = stageItem.stageNumber <= highestUnlocked
+                    val isSelected = selectedStage == stageItem && isUnlocked
+                    val prevStage = stages.find { it.stageNumber == stageItem.stageNumber - 1 }
+    
+                    StageCard(
+                        stage = stageItem,
+                        isSelected = isSelected,
+                        isUnlocked = isUnlocked,
+                        previousStageName = prevStage?.title,
+                        onSelect = {
+                            if (isUnlocked) {
+                                viewModel.selectStage(stageItem)
+                            }
+                        }
+                    )
+                }
             }
         }
     }

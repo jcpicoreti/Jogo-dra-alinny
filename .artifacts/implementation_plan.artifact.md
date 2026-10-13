@@ -1,25 +1,36 @@
-# Preparação e Otimização para Google Play Console
+# Plano de Implementação: Otimizações Finais, Gráficos e Dificuldade
 
-Este plano detalha as alterações necessárias para corrigir erros de construção (`lint`), otimizar o tamanho do aplicativo e garantir que o projeto cumpra os requisitos básicos exigidos pela Google Play Store para submissão.
+Este plano detalha as alterações necessárias para adicionar melhorias visuais aos personagens (incluindo o tom de pele da Raynara), ajuste no texto do Julio, interface de ícones de armas, adição de níveis de dificuldade, avanço automático de fases e checagem da viabilidade de evolução das armas.
 
 ## Open Questions
-- Você já possui os ícones do aplicativo (`ic_launcher`) com o design final na pasta de recursos? Os arquivos padrões podem gerar avisos de forma, mas costumam ser aceitos para testes. Recomenda-se gerar ícones finais usando o *Image Asset Studio* do Android Studio antes de lançar.
+- Ícones das armas: Como o projeto não possui arquivos de imagem próprios para cada arma, substituirei os emojis atuais por ícones estilizados vetoriais nativos do Compose (`Material Icons`) combinados com cores distintas, garantindo um visual muito mais profissional. Está de acordo?
+- Níveis de Dificuldade: Criarei as dificuldades: "Fácil" (0.8x status inimigo), "Normal" (1.0x) e "Difícil" (1.5x status e mais inimigos). O multiplicador afetará a vida e o dano dos germes.
 
 ## Proposed Changes
 
-### [app/build.gradle.kts]
-- **Minificação e Ofuscação:** Habilitar `isMinifyEnabled = true` e `isShrinkResources = true` para o tipo de build `release`. Isso é mandatório para reduzir drasticamente o tamanho do arquivo que vai para a loja (o Android App Bundle) e dificultar a engenharia reversa do seu jogo.
-- **Target SDK:** Mudar `targetSdk` de `36` para `35`. A Play Store exige no mínimo API 34, mas o SDK 36 (Android 16) ainda não é totalmente estável, o que pode causar alertas ou rejeições prematuras. O SDK 35 é o mais recomendado no momento atual.
+### [app/src/main/java/com/example/data/model/GameModels.kt]
+- **Texto Julio:** Alterar `description` do `JULIO` de "Oficial da marinha..." para "Militar da marinha...".
+- **Nova Enum `Difficulty`:** Adicionar enumeração de dificuldades com os multiplicadores de Vida e Dano.
+- **Fusões Garantidas:** O jogo possui 15 armas e 15 itens passivos emparelhados perfeitamente. Garantirei que o motor do jogo (em `generateLevelUpChoices`) sempre ofereça o item passivo necessário para a arma caso o jogador alcance o nível 4 da arma (se ainda não possuir o passivo).
 
-### [app/src/main/java/com/example/MainActivity.kt]
-- Adicionar anotação `@SuppressLint("RestrictedApi")` no método `dispatchKeyEvent`. O analisador estático (Lint) está acusando erro nesta sobrescrita por conta de bibliotecas internas da Google, travando o build de release. Ignorar esse aviso especificamente liberará a geração do pacote final.
+### [app/src/main/java/com/example/game/GameEngine.kt]
+- **Garantia de Evolução:** Ajustar a lógica no `generateLevelUpChoices` para aumentar absurdamente o peso de *drop* do item passivo parceiro da arma assim que a arma chega ao nível alto, para garantir que o jogador nunca fique preso sem conseguir evoluir a arma.
+- **Aplicar Dificuldade:** O `GameEngine` passará a receber a `Difficulty` no construtor e multiplicará `baseHp` e `baseDamage` dos germes na hora do *spawn*.
 
-### [app/src/main/AndroidManifest.xml]
-- Remover o atributo `android:label` redundante da tag `<activity>`, que já é herdado da aplicação.
+### [app/src/main/java/com/example/ui/viewmodel/GameViewModel.kt]
+- **Avanço Automático:** No momento em que a partida finaliza (`stopGameLoop`), se o jogador for vitorioso, alterar a fase selecionada (`_selectedStage.value`) automaticamente para a próxima destravada.
+- **Seleção de Dificuldade:** Criar estado (`_selectedDifficulty`) para a UI se comunicar com a *Engine*.
 
-### [Vários arquivos de UI (GameScreen.kt, MatchEndScreen.kt, RankingScreen.kt)]
-- Corrigir bugs em formatação de strings `String.format("%02d:%02d", minutes, seconds)`. Na Play Store, a formatação de tempo assim sem passar `Locale.getDefault()` pode causar comportamentos inesperados em certos idiomas e gera avisos do Lint. Será corrigido para `String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)`.
+### [app/src/main/java/com/example/ui/screens/StageSelectScreen.kt]
+- **Interface de Dificuldade:** Incluir botões para o jogador escolher a dificuldade da partida (Fácil, Normal, Difícil) antes de iniciar a partida.
+
+### [app/src/main/java/com/example/ui/graphics/DentalCanvasRenderer.kt]
+- **Melhorias Gráficas nos Personagens:** Refatorar `drawPlayer` para desenhar sombras (*shading*), detalhes de roupas específicos e luzes nos personagens.
+- **Cor da Raynara:** Alterar a paleta de cores base da `RAYNARA` para apresentar o tom de pele pardo/marrom (`0xFF8D5524` ou equivalente), com sombreado apropriado.
+
+### [app/src/main/java/com/example/ui/screens/GameScreen.kt]
+- **Ícones Profissionais (HUD e Level Up):** Remover emojis e usar `Material Theme Icons` com fundos arredondados, bordas e gradientes de cores baseados na raridade/tipo da arma.
 
 ## Verification Plan
-1. Rodar `:app:lintRelease` para garantir que nenhum erro impeça a criação do pacote final.
-2. Rodar `:app:bundleRelease` (a partir do Build -> Generate Signed Bundle) para validar a construção de arquivos `.aab` (Android App Bundle), obrigatórios no Play Console.
+1. Rodar `:app:lintRelease` novamente para garantir zero bloqueios de Play Console.
+2. Construir e executar o jogo (`:app:assembleDebug`) para testar o avanço de estágio, a garantia da receita de arma no sub-nível 5, o texto corrigido, a seleção de dificuldade e as melhorias gráficas da Raynara.

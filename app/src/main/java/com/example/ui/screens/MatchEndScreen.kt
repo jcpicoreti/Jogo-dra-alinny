@@ -74,7 +74,7 @@ fun MatchEndScreen(
 
     val minutes = timeSec / 60
     val seconds = timeSec % 60
-    val timeFormatted = String.format("%02d:%02d", minutes, seconds)
+    val timeFormatted = String.format(java.util.Locale.getDefault(), "%02d:%02d", minutes, seconds)
 
     Box(
         modifier = Modifier

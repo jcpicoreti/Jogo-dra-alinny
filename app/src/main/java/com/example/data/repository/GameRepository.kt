@@ -164,6 +164,14 @@ class GameRepository(context: Context) {
                 unlockedTimestamp = System.currentTimeMillis()
             )
         )
+        
+        // Character Unlocks tied to specific achievements
+        if (achievementId == "boss_carie") unlockCharacter(CharacterId.RAYNARA)
+        if (achievementId == "boss_tartaro") unlockCharacter(CharacterId.JULIO)
+        if (achievementId == "dual_evolution") unlockCharacter(CharacterId.BART)
+        if (achievementId == "kills_1000") unlockCharacter(CharacterId.LORENZO)
+        if (achievementId == "collect_loot_500") unlockCharacter(CharacterId.RICK)
+        
         return true
     }
 
@@ -174,15 +182,20 @@ class GameRepository(context: Context) {
 
         val newProg = currentProgress.coerceAtMost(def.maxProgress)
         val isNowUnlocked = newProg >= def.maxProgress
-        achievementDao.insertOrUpdate(
-            AchievementEntity(
-                id = achievementId,
-                isUnlocked = isNowUnlocked,
-                currentProgress = newProg,
-                unlockedTimestamp = if (isNowUnlocked) System.currentTimeMillis() else null
+        
+        if (isNowUnlocked) {
+            return unlockAchievement(achievementId)
+        } else {
+            achievementDao.insertOrUpdate(
+                AchievementEntity(
+                    id = achievementId,
+                    isUnlocked = false,
+                    currentProgress = newProg,
+                    unlockedTimestamp = null
+                )
             )
-        )
-        return isNowUnlocked
+            return false
+        }
     }
 
     // Character Unlocks

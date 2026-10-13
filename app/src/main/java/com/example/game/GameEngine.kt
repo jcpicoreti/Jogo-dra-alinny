@@ -49,7 +49,8 @@ class GameEngine(
     val stageId: StageId,
     private val soundManager: SoundManager,
     clinicUpgrades: List<ClinicUpgradeEntity>,
-    val highestStageUnlocked: Int = 1
+    val highestStageUnlocked: Int = 1,
+    val difficulty: com.example.data.model.Difficulty = com.example.data.model.Difficulty.NORMAL
 ) {
     val stateLock = Any()
 
@@ -181,7 +182,6 @@ class GameEngine(
     private var lastSonicPulseTimer = 0f
     private var bossSpawnedPhase1 = false
     private var bossSpawnedPhase2 = false
-    private var infiniteBossTimer = 0f
     private var freezeTimer = 0f
     private var naturalRegenTimer = 0f
     private var barkTimer = 0f
@@ -193,6 +193,9 @@ class GameEngine(
     var onItemDiscovered: ((String) -> Unit)? = null
     var onFusionTriggered: ((EvolutionType) -> Unit)? = null
     private var eliteSpawnedPreBoss = false
+    
+    private var internalTimeToNextBoss = if (stageId == StageId.STAGE_INFINITE) 120f else 300f
+    private var bossesSpawnedCount = 0
 
     fun setMoveDirection(x: Float, y: Float) {
         val len = sqrt(x * x + y * y)
@@ -341,8 +344,13 @@ class GameEngine(
                     val dy = newPlayerY - enemy.y
                     val dist = sqrt(dx * dx + dy * dy)
                     if (dist > 1f) {
-                        enemy.x += (dx / dist) * enemy.speed * 60f * dt
-                        enemy.y += (dy / dist) * enemy.speed * 60f * dt
+                        if (enemy.type.isShooter && dist < 300f) {
+                            enemy.x += (dx / dist) * (enemy.speed * 10f) * dt
+                            enemy.y += (dy / dist) * (enemy.speed * 10f) * dt
+                        } else {
+                            enemy.x += (dx / dist) * enemy.speed * 60f * dt
+                            enemy.y += (dy / dist) * enemy.speed * 60f * dt
+                        }
                     }
 
                     if (dist < (enemy.radius + 18f)) {
@@ -352,6 +360,22 @@ class GameEngine(
                             if (characterId == CharacterId.JULIO) dmg *= 0.80f
                             damagePlayer(dmg)
                         }
+                    } else if (enemy.type.isShooter && enemy.attackCooldown <= 0f && dist < 350f) {
+                        enemy.attackCooldown = 3.0f // Shoot every 3 seconds
+                        val pDx = (dx / dist)
+                        val pDy = (dy / dist)
+                        projectiles.add(ProjectileInstance(
+                            id = idGen.incrementAndGet(),
+                            x = enemy.x,
+                            y = enemy.y,
+                            vx = pDx * 150f,
+                            vy = pDy * 150f,
+                            damage = enemy.damage * passiveArmorReduction,
+                            durationRemaining = 5f,
+                            pierceLeft = 0,
+                            weaponType = WeaponType.ESCOVA_DENTE,
+                            isEnemyProjectile = true
+                        ))
                     }
                 }
             }
@@ -364,22 +388,34 @@ class GameEngine(
                 p.y += p.vy * dt
                 p.rotation += 360f * dt
 
-                for (enemy in enemies) {
-                    if (enemy.isDead) continue
-                    val dx = enemy.x - p.x
-                    val dy = enemy.y - p.y
-                    val distSq = dx * dx + dy * dy
-                    val hitDist = enemy.radius + p.radius
-                    if (distSq <= hitDist * hitDist) {
-                        val isCrit = Random.nextFloat() < (characterId.baseCritChance + passiveCritBonus)
-                        val finalDmg = p.damage * (if (isCrit) 2.0f else 1.0f)
-                        applyDamageToEnemy(enemy, finalDmg, isCrit)
-                        spawnHitParticles(enemy.x, enemy.y, 4, 0xFF38BDF8)
-
-                        p.pierceLeft--
-                        if (p.pierceLeft <= 0) {
-                            p.isDead = true
-                            break
+                if (p.isEnemyProjectile) {
+                    val dx = newPlayerX - p.x
+                    val dy = newPlayerY - p.y
+                    val hitDist = playerRadius + p.radius
+                    if (dx * dx + dy * dy <= hitDist * hitDist) {
+                        p.isDead = true
+                        var dmg = p.damage
+                        if (characterId == CharacterId.JULIO) dmg *= 0.80f
+                        damagePlayer(dmg)
+                    }
+                } else {
+                    for (enemy in enemies) {
+                        if (enemy.isDead) continue
+                        val dx = enemy.x - p.x
+                        val dy = enemy.y - p.y
+                        val distSq = dx * dx + dy * dy
+                        val hitDist = enemy.radius + p.radius
+                        if (distSq <= hitDist * hitDist) {
+                            val isCrit = Random.nextFloat() < (characterId.baseCritChance + passiveCritBonus)
+                            val finalDmg = p.damage * (if (isCrit) 2.0f else 1.0f)
+                            applyDamageToEnemy(enemy, finalDmg, isCrit)
+                            spawnHitParticles(enemy.x, enemy.y, 4, 0xFF38BDF8)
+    
+                            p.pierceLeft--
+                            if (p.pierceLeft <= 0) {
+                                p.isDead = true
+                                break
+                            }
                         }
                     }
                 }
@@ -491,6 +527,11 @@ class GameEngine(
             // Update Boss HUD status
             val bossFraction = currentBoss?.let { it.hp / it.maxHp } ?: 0f
             val bossName = currentBoss?.type?.displayName
+            
+            if (currentBoss == null) {
+                internalTimeToNextBoss -= dt
+                if (internalTimeToNextBoss < 0f) internalTimeToNextBoss = 0f
+            }
 
             _gameState.value = _gameState.value.copy(
                 playerX = newPlayerX,
@@ -498,6 +539,7 @@ class GameEngine(
                 gameTimeSeconds = newGameTime,
                 activeBossName = bossName,
                 activeBossHpFraction = bossFraction,
+                nextBossTimeRemaining = internalTimeToNextBoss.toInt(),
                 isFreezeActive = isFrozen,
                 screenShakeX = shakeX,
                 screenShakeY = shakeY,
@@ -972,41 +1014,45 @@ class GameEngine(
 
     private fun updateEnemySpawning(dt: Float, gameTime: Float, playerX: Float, playerY: Float) {
         spawnTimer += dt
-        val baseSpawnInterval = (1.5f - (gameTime / 300f).coerceAtMost(1.0f)).coerceAtLeast(0.35f)
+        val baseSpawnInterval = (1.5f - (gameTime / 600f).coerceAtMost(1.0f)).coerceAtLeast(0.35f)
 
         if (spawnTimer >= baseSpawnInterval) {
             spawnTimer = 0f
-            val count = 2 + (gameTime / 60f).toInt()
+            val count = 2 + (gameTime / 90f).toInt()
             repeat(count) {
                 spawnRandomEnemy(gameTime, playerX, playerY)
             }
         }
 
-        if (stageId != StageId.STAGE_INFINITE) {
-            if (gameTime >= 150f && !bossSpawnedPhase1) {
-                bossSpawnedPhase1 = true
-                spawnStageBoss(stageId, playerX, playerY, isFinal = false)
+        if (internalTimeToNextBoss <= 0f) {
+            val isAnyBossAlive = enemies.any { !it.isDead && it.isBoss }
+            if (!isAnyBossAlive) {
+                if (stageId != StageId.STAGE_INFINITE) {
+                    if (!bossSpawnedPhase1) {
+                        bossSpawnedPhase1 = true
+                        spawnStageBoss(stageId, playerX, playerY, isFinal = false)
+                    } else if (!bossSpawnedPhase2) {
+                        bossSpawnedPhase2 = true
+                        spawnStageBoss(stageId, playerX, playerY, isFinal = true)
+                    }
+                } else {
+                    bossesSpawnedCount++
+                    val bossList = listOf(
+                        EnemyType.BOSS_CARIE_GIGANTE,
+                        EnemyType.BOSS_GENGIVITE,
+                        EnemyType.BOSS_ABCESSO,
+                        EnemyType.BOSS_BIOFILME_APARELHO,
+                        EnemyType.BOSS_TARTARO_TITANICO
+                    )
+                    spawnBossInstance(bossList.random(), playerX, playerY)
+                }
             }
-            if (gameTime >= 210f && !eliteSpawnedPreBoss) {
+        }
+
+        if (stageId != StageId.STAGE_INFINITE && bossSpawnedPhase1 && !bossSpawnedPhase2 && !eliteSpawnedPreBoss) {
+            if (internalTimeToNextBoss <= 90f) {
                 eliteSpawnedPreBoss = true
                 spawnPreBossElites(playerX, playerY)
-            }
-            if (gameTime >= 270f && !bossSpawnedPhase2) {
-                bossSpawnedPhase2 = true
-                spawnStageBoss(stageId, playerX, playerY, isFinal = true)
-            }
-        } else {
-            infiniteBossTimer += dt
-            if (infiniteBossTimer >= 90f) {
-                infiniteBossTimer = 0f
-                val bossList = listOf(
-                    EnemyType.BOSS_CARIE_GIGANTE,
-                    EnemyType.BOSS_GENGIVITE,
-                    EnemyType.BOSS_ABCESSO,
-                    EnemyType.BOSS_BIOFILME_APARELHO,
-                    EnemyType.BOSS_TARTARO_TITANICO
-                )
-                spawnBossInstance(bossList.random(), playerX, playerY)
             }
         }
     }
@@ -1019,20 +1065,28 @@ class GameEngine(
         val x = playerX + cos(angle) * spawnDist
         val y = playerY + sin(angle) * spawnDist
 
-        val type = when (stageId) {
-            StageId.STAGE_1_ESMALTE -> if (Random.nextFloat() < 0.7f) EnemyType.STREPTOCOCCUS else EnemyType.PLACA_AMARELA
-            StageId.STAGE_2_GENGIVA -> if (Random.nextFloat() < 0.6f) EnemyType.ESPIROQUETA else EnemyType.ACIDO_CORROSIVO
-            StageId.STAGE_3_CANAL -> if (Random.nextFloat() < 0.5f) EnemyType.ACIDO_CORROSIVO else EnemyType.TARTARO_MINION
-            StageId.STAGE_4_APARELHO -> if (Random.nextFloat() < 0.5f) EnemyType.PLACA_AMARELA else EnemyType.ESPIROQUETA
-            StageId.STAGE_5_TARTARO -> if (Random.nextFloat() < 0.4f) EnemyType.TARTARO_MINION else EnemyType.ACIDO_CORROSIVO
+        val randVal = Random.nextFloat()
+        var type = when (stageId) {
+            StageId.STAGE_1_ESMALTE -> if (randVal < 0.7f) EnemyType.STREPTOCOCCUS else EnemyType.PLACA_AMARELA
+            StageId.STAGE_2_GENGIVA -> if (randVal < 0.6f) EnemyType.ESPIROQUETA else EnemyType.ACIDO_CORROSIVO
+            StageId.STAGE_3_CANAL -> if (randVal < 0.5f) EnemyType.ACIDO_CORROSIVO else EnemyType.TARTARO_MINION
+            StageId.STAGE_4_APARELHO -> if (randVal < 0.5f) EnemyType.PLACA_AMARELA else EnemyType.ESPIROQUETA
+            StageId.STAGE_5_TARTARO -> if (randVal < 0.4f) EnemyType.TARTARO_MINION else EnemyType.ACIDO_CORROSIVO
             StageId.STAGE_INFINITE -> {
-                val types = EnemyType.values().filter { !it.name.startsWith("BOSS_") }
+                val types = EnemyType.values().filter { !it.name.startsWith("BOSS_") && !it.isElite }
                 types.random()
             }
         }
+        
+        if (Random.nextFloat() < 0.10f) {
+            type = EnemyType.BACTERIA_ATIRADORA
+        }
 
         val hpScale = 1f + (gameTime / 180f)
-        val hp = type.baseHp * hpScale
+        val diffHp = difficulty.hpMultiplier
+        val diffDmg = difficulty.dmgMultiplier
+        val hp = type.baseHp * hpScale * diffHp
+        
         enemies.add(
             EnemyInstance(
                 id = idGen.incrementAndGet(),
@@ -1042,7 +1096,7 @@ class GameEngine(
                 maxHp = hp,
                 type = type,
                 speed = type.baseSpeed,
-                damage = type.baseDamage,
+                damage = type.baseDamage * diffDmg,
                 radius = type.radius
             )
         )
@@ -1068,16 +1122,20 @@ class GameEngine(
         soundManager.playBossRoar()
         shakeIntensity = 18f // Screen shake on boss spawn!
 
+        val diffHp = difficulty.hpMultiplier
+        val diffDmg = difficulty.dmgMultiplier
+        val hp = bossType.baseHp * diffHp
+
         enemies.add(
             EnemyInstance(
                 id = idGen.incrementAndGet(),
                 x = x,
                 y = y,
-                hp = bossType.baseHp,
-                maxHp = bossType.baseHp,
+                hp = hp,
+                maxHp = hp,
                 type = bossType,
                 speed = bossType.baseSpeed,
-                damage = bossType.baseDamage,
+                damage = bossType.baseDamage * diffDmg,
                 radius = bossType.radius,
                 isBoss = true
             )
@@ -1150,6 +1208,9 @@ class GameEngine(
                 triggerVictory()
                 return
             }
+            
+            // Reset the timer for the next boss
+            internalTimeToNextBoss = if (stageId == StageId.STAGE_INFINITE) 120f else 270f
         } else {
             val dropType = if (enemy.type.isElite) {
                 LootType.BAU_MEGA_XP
@@ -1312,6 +1373,18 @@ class GameEngine(
             options.add(LevelUpOption.UpgradeWeapon(it))
         }
 
+        // Check if any weapon is level 4+ and we are missing its evolution item.
+        // We guarantee that it gets added to the options if we have a free passive slot.
+        val urgentPassivesToSpawn = mutableSetOf<PassiveType>()
+        if (state.passives.size < 4) {
+            val existingPassives = state.passives.map { it.type }.toSet()
+            state.weapons.forEach { w ->
+                if (w.level >= 4 && w.type.evolutionItem != null && w.type.evolutionItem !in existingPassives) {
+                    urgentPassivesToSpawn.add(w.type.evolutionItem)
+                }
+            }
+        }
+
         // Limit total weapons + passives to maximum 8
         val totalSlots = state.weapons.size + state.passives.size
         val canAddMore = totalSlots < 8
@@ -1333,8 +1406,16 @@ class GameEngine(
 
         if (canAddMore && state.passives.size < 4) {
             val existingPassives = state.passives.map { it.type }.toSet()
+            
+            urgentPassivesToSpawn.forEach { urgentP ->
+                options.add(LevelUpOption.NewPassive(urgentP))
+                // Add it a bunch of times to guarantee it appears when shuffling later (weighted)
+                options.add(LevelUpOption.NewPassive(urgentP))
+                options.add(LevelUpOption.NewPassive(urgentP))
+            }
+            
             PassiveType.values()
-                .filter { it !in existingPassives && it.unlockedAtStage <= highestStageUnlocked }
+                .filter { it !in existingPassives && it.unlockedAtStage <= highestStageUnlocked && it !in urgentPassivesToSpawn }
                 .shuffled()
                 .take(2)
                 .forEach {
@@ -1347,10 +1428,10 @@ class GameEngine(
         }
 
         return if (evolution != null) {
-            val rest = options.filter { it != evolution }.shuffled().take(2)
+            val rest = options.filter { it != evolution }.distinct().shuffled().take(2)
             listOf(evolution) + rest
         } else {
-            options.shuffled().take(3)
+            options.distinct().shuffled().take(3)
         }
     }
 
