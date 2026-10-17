@@ -654,34 +654,53 @@ object DentalCanvasRenderer {
             }
 
             CharacterId.RAYNARA -> {
-                // Raynara: 14yo stylish black teenage girl, warm brown skin tone, colorful braids, purple jacket & shiny braces
-                drawScope.drawRoundRect(color = Color(0xFF7E22CE), topLeft = Offset(x - 14f, y - 5f + wobble), size = Size(28f, 24f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f))
-                // Warm rich brown skin tone (melanin warm chestnut-caramel brown):
-                drawScope.drawCircle(color = Color(0xFFA56D52), radius = 14.5f, center = Offset(x, y - 16f + wobble))
-                // Subtle warm skin glow/highlight on forehead
-                drawScope.drawCircle(color = Color(0x33FBBF24), radius = 6.5f, center = Offset(x, y - 20f + wobble))
+                // Raynara: Stylish teenage girl with rich dark warm brown skin tone, black braided hair bun with beads, purple jacket & shiny braces
+                val skinColor = Color(0xFF8D5B28) // Rich dark warm brown skin tone
+                val hairColor = Color(0xFF18181B) // Jet black hair
 
-                // Braided hair bun & side dreadlocks with beads
-                drawScope.drawCircle(color = Color(0xFF1E1B4B), radius = 16f, center = Offset(x, y - 21f + wobble))
-                drawScope.drawCircle(color = Color(0xFF1E1B4B), radius = 6f, center = Offset(x - 15f, y - 14f + wobble))
-                drawScope.drawCircle(color = Color(0xFF1E1B4B), radius = 6f, center = Offset(x + 15f, y - 14f + wobble))
-                // Colorful hair beads
-                drawScope.drawCircle(color = Color(0xFF06B6D4), radius = 2.5f, center = Offset(x - 15f, y - 9f + wobble))
-                drawScope.drawCircle(color = Color(0xFFF59E0B), radius = 2.5f, center = Offset(x + 15f, y - 9f + wobble))
+                // 1. Hair Bun & Side Braids (Drawn behind/above head)
+                drawScope.drawCircle(color = hairColor, radius = 12f, center = Offset(x, y - 28f + wobble))
+                drawScope.drawCircle(color = hairColor, radius = 7f, center = Offset(x - 14f, y - 18f + wobble))
+                drawScope.drawCircle(color = hairColor, radius = 7f, center = Offset(x + 14f, y - 18f + wobble))
+                // Colorful hair beads on braid ends
+                drawScope.drawCircle(color = Color(0xFF06B6D4), radius = 3f, center = Offset(x - 14f, y - 11f + wobble))
+                drawScope.drawCircle(color = Color(0xFFF59E0B), radius = 3f, center = Offset(x + 14f, y - 11f + wobble))
 
-                // Expressive dark brown eyes
-                drawScope.drawCircle(color = Color(0xFF1E293B), radius = 2.8f, center = Offset(x - 5f, y - 16f + wobble))
-                drawScope.drawCircle(color = Color(0xFF1E293B), radius = 2.8f, center = Offset(x + 5f, y - 16f + wobble))
-                drawScope.drawCircle(color = Color.White, radius = 1f, center = Offset(x - 6f, y - 17f + wobble))
-                drawScope.drawCircle(color = Color.White, radius = 1f, center = Offset(x + 4f, y - 17f + wobble))
+                // 2. Purple Jacket & Top
+                drawScope.drawRoundRect(
+                    color = Color(0xFF7E22CE),
+                    topLeft = Offset(x - 14f, y - 5f + wobble),
+                    size = Size(28f, 24f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                )
+
+                // 3. Head (Warm Caramel-Brown Skin)
+                drawScope.drawCircle(color = skinColor, radius = 14f, center = Offset(x, y - 16f + wobble))
+
+                // Hairline braid bangs (front hairline)
+                drawScope.drawCircle(color = hairColor, radius = 8f, center = Offset(x - 8f, y - 27f + wobble))
+                drawScope.drawCircle(color = hairColor, radius = 8f, center = Offset(x + 8f, y - 27f + wobble))
+
+                // 4. Expressive Eyes
+                drawScope.drawCircle(color = Color.White, radius = 3.5f, center = Offset(x - 5f, y - 16f + wobble))
+                drawScope.drawCircle(color = Color.White, radius = 3.5f, center = Offset(x + 5f, y - 16f + wobble))
+                drawScope.drawCircle(color = Color(0xFF0F172A), radius = 2f, center = Offset(x - 5f, y - 16f + wobble))
+                drawScope.drawCircle(color = Color(0xFF0F172A), radius = 2f, center = Offset(x + 5f, y - 16f + wobble))
+                drawScope.drawCircle(color = Color.White, radius = 0.9f, center = Offset(x - 6f, y - 17f + wobble))
+                drawScope.drawCircle(color = Color.White, radius = 0.9f, center = Offset(x + 4f, y - 17f + wobble))
 
                 // Warm blush on cheeks
-                drawScope.drawCircle(color = Color(0x44B91C1C), radius = 3.5f, center = Offset(x - 8f, y - 13f + wobble))
-                drawScope.drawCircle(color = Color(0x44B91C1C), radius = 3.5f, center = Offset(x + 8f, y - 13f + wobble))
+                drawScope.drawCircle(color = Color(0x33E11D48), radius = 3.5f, center = Offset(x - 8f, y - 13f + wobble))
+                drawScope.drawCircle(color = Color(0x33E11D48), radius = 3.5f, center = Offset(x + 8f, y - 13f + wobble))
 
-                // Brilliant smile with Orthodontic Braces & glint
-                drawScope.drawLine(color = Color(0xFFCBD5E1), start = Offset(x - 5f, y - 9.5f + wobble), end = Offset(x + 5f, y - 9.5f + wobble), strokeWidth = 2.2f)
-                // Individual colorful brackets
+                // 5. Smile & Orthodontic Braces
+                drawScope.drawLine(
+                    color = Color(0xFFE2E8F0),
+                    start = Offset(x - 5f, y - 9.5f + wobble),
+                    end = Offset(x + 5f, y - 9.5f + wobble),
+                    strokeWidth = 2.2f
+                )
+                // Colorful brackets
                 drawScope.drawRect(color = Color(0xFF38BDF8), topLeft = Offset(x - 4f, y - 10.5f + wobble), size = Size(2f, 2f))
                 drawScope.drawRect(color = Color(0xFFEC4899), topLeft = Offset(x - 1f, y - 10.5f + wobble), size = Size(2f, 2f))
                 drawScope.drawRect(color = Color(0xFF38BDF8), topLeft = Offset(x + 2f, y - 10.5f + wobble), size = Size(2f, 2f))
@@ -909,6 +928,81 @@ object DentalCanvasRenderer {
                 drawScope.drawCircle(color = Color(0xFFEF4444), radius = 3.5f, center = Offset(x + 6f, y - 4f + wobble))
             }
 
+            EnemyType.FUNGOS_CANDIDA -> {
+                // Fungo Candida Albicans: Glowing translucent cyan spore ring
+                drawScope.drawCircle(color = Color(0xFF0891B2), radius = enemy.radius + 3f, center = Offset(x, y + wobble))
+                drawScope.drawCircle(color = hitColor, radius = enemy.radius, center = Offset(x, y + wobble))
+                drawScope.drawCircle(color = Color(0xFF67E8F9), radius = enemy.radius * 0.5f, center = Offset(x - 3f, y - 3f + wobble))
+                drawScope.drawCircle(color = Color.White, radius = 3.5f, center = Offset(x - 6f, y - 5f + wobble))
+                drawScope.drawCircle(color = Color.White, radius = 3.5f, center = Offset(x + 6f, y - 5f + wobble))
+                drawScope.drawCircle(color = Color(0xFF0891B2), radius = 1.8f, center = Offset(x - 6f, y - 5f + wobble))
+                drawScope.drawCircle(color = Color(0xFF0891B2), radius = 1.8f, center = Offset(x + 6f, y - 5f + wobble))
+            }
+
+            EnemyType.VIRUS_HERPES -> {
+                // Virus Herpes Bucal: Neon magenta star-shaped viral capsid with sharp spikes
+                val rad = enemy.radius
+                drawScope.drawCircle(color = Color(0xFF831843), radius = rad + 2f, center = Offset(x, y + wobble))
+                drawScope.drawCircle(color = hitColor, radius = rad, center = Offset(x, y + wobble))
+                for (i in 0 until 6) {
+                    val ang = (i * 60f + time * 60f) % 360f
+                    val r = Math.toRadians(ang.toDouble()).toFloat()
+                    val sx = x + cos(r) * (rad + 5f)
+                    val sy = y + sin(r) * (rad + 5f) + wobble
+                    drawScope.drawCircle(color = Color(0xFFF472B6), radius = 2.5f, center = Offset(sx, sy))
+                }
+                drawScope.drawCircle(color = Color(0xFFFDE047), radius = 3f, center = Offset(x - 4f, y - 3f + wobble))
+                drawScope.drawCircle(color = Color(0xFFFDE047), radius = 3f, center = Offset(x + 4f, y - 3f + wobble))
+            }
+
+            EnemyType.BACTERIA_CARIE_RADICULAR -> {
+                // Carie de Raiz Petrificada: Heavy dark brown armored root shell
+                drawScope.drawRoundRect(
+                    color = Color(0xFF1C1917),
+                    topLeft = Offset(x - enemy.radius - 2f, y - enemy.radius + wobble - 2f),
+                    size = Size(enemy.radius * 2f + 4f, enemy.radius * 2f + 4f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+                )
+                drawScope.drawRoundRect(
+                    color = hitColor,
+                    topLeft = Offset(x - enemy.radius, y - enemy.radius + wobble),
+                    size = Size(enemy.radius * 2f, enemy.radius * 2f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+                )
+                drawScope.drawLine(color = Color(0xFF78350F), start = Offset(x - 12f, y - 10f + wobble), end = Offset(x + 10f, y + 10f + wobble), strokeWidth = 3f)
+                drawScope.drawCircle(color = Color(0xFFDC2626), radius = 4f, center = Offset(x - 6f, y - 4f + wobble))
+                drawScope.drawCircle(color = Color(0xFFDC2626), radius = 4f, center = Offset(x + 6f, y - 4f + wobble))
+            }
+
+            EnemyType.GERME_INFLAMATORIO -> {
+                // Germe Inflamatorio Cuspidor: Fiery orange inflamed spore
+                drawScope.drawCircle(color = Color(0xFF7C2D12), radius = enemy.radius + 2f, center = Offset(x, y + wobble))
+                drawScope.drawCircle(color = hitColor, radius = enemy.radius, center = Offset(x, y + wobble))
+                drawScope.drawCircle(color = Color(0xFFFDE047), radius = enemy.radius * 0.45f, center = Offset(x, y - 2f + wobble))
+                drawScope.drawCircle(color = Color.White, radius = 4f, center = Offset(x - 5f, y - 5f + wobble))
+                drawScope.drawCircle(color = Color.White, radius = 4f, center = Offset(x + 5f, y - 5f + wobble))
+                drawScope.drawCircle(color = Color(0xFFDC2626), radius = 2f, center = Offset(x - 5f, y - 5f + wobble))
+                drawScope.drawCircle(color = Color(0xFFDC2626), radius = 2f, center = Offset(x + 5f, y - 5f + wobble))
+            }
+
+            EnemyType.BACILO_ANAEROBIO -> {
+                // Bacilo Anaerobio Fetido: Olive green rod-shaped bacterium
+                drawScope.drawRoundRect(
+                    color = Color(0xFF365314),
+                    topLeft = Offset(x - enemy.radius * 1.1f - 2f, y - enemy.radius * 0.7f + wobble - 2f),
+                    size = Size(enemy.radius * 2.2f + 4f, enemy.radius * 1.4f + 4f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(enemy.radius * 0.7f, enemy.radius * 0.7f)
+                )
+                drawScope.drawRoundRect(
+                    color = hitColor,
+                    topLeft = Offset(x - enemy.radius * 1.1f, y - enemy.radius * 0.7f + wobble),
+                    size = Size(enemy.radius * 2.2f, enemy.radius * 1.4f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(enemy.radius * 0.7f, enemy.radius * 0.7f)
+                )
+                drawScope.drawCircle(color = Color(0xFFA3E635), radius = 3f, center = Offset(x - 6f, y - 2f + wobble))
+                drawScope.drawCircle(color = Color(0xFFA3E635), radius = 3f, center = Offset(x + 6f, y - 2f + wobble))
+            }
+
             // === PRE-BOSS ELITES ===
             EnemyType.ELITE_SUPER_BACTERIA -> {
                 // Elite Mutant Super-Bacteria: pulsating toxic green sphere with emerald chitin shell and neon spikes
@@ -1017,6 +1111,26 @@ object DentalCanvasRenderer {
             EnemyType.BOSS_GENGIVITE -> {
                 // Inflamed pulsing red queen with tentacle spikes
                 val pulse = (sin((time * 6f).toDouble()) * 5f).toFloat()
+
+                // Telegraph / Charge Visual Effect
+                if (enemy.skillState == 1) { // Telegraphing dash
+                    val blink = if ((time * 15f).toInt() % 2 == 0) Color(0xFFEF4444) else Color(0xFFFDE047)
+                    drawScope.drawCircle(color = blink.copy(alpha = 0.45f), radius = enemy.radius + 18f, center = Offset(x, y))
+                    drawScope.drawLine(
+                        color = blink,
+                        start = Offset(x, y),
+                        end = Offset(x + enemy.chargeVx * 120f, y + enemy.chargeVy * 120f),
+                        strokeWidth = 5f
+                    )
+                } else if (enemy.skillState == 2) { // Dashing
+                    drawScope.drawLine(
+                        color = Color(0xAAEF4444),
+                        start = Offset(x - enemy.chargeVx * 40f, y - enemy.chargeVy * 40f),
+                        end = Offset(x, y),
+                        strokeWidth = enemy.radius * 1.5f
+                    )
+                }
+
                 drawScope.drawCircle(color = hitColor, radius = enemy.radius + pulse, center = Offset(x, y))
                 drawScope.drawCircle(color = Color(0xFF991B1B), radius = (enemy.radius + pulse) * 0.75f, center = Offset(x, y))
                 // Multiple angry eyes
@@ -1027,14 +1141,26 @@ object DentalCanvasRenderer {
             }
 
             EnemyType.BOSS_ABCESSO -> {
-                // Pulp Abscess Boss
+                // Pulp Abscess Boss with pulsing toxic pustules
+                drawScope.drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color(0x88A855F7), Color(0x336B21A8), Color.Transparent),
+                        center = Offset(x, y),
+                        radius = enemy.radius * 1.3f
+                    ),
+                    radius = enemy.radius * 1.3f,
+                    center = Offset(x, y)
+                )
                 drawScope.drawCircle(color = hitColor, radius = enemy.radius, center = Offset(x, y))
-                drawScope.drawCircle(color = Color(0xFFFACC15), radius = 12f, center = Offset(x - 14f, y - 14f))
-                drawScope.drawCircle(color = Color(0xFFFACC15), radius = 10f, center = Offset(x + 18f, y + 8f))
+                // Bubbling pustules
+                val pustulePulse = (sin((time * 8f).toDouble()) * 3f).toFloat()
+                drawScope.drawCircle(color = Color(0xFFFACC15), radius = 12f + pustulePulse, center = Offset(x - 14f, y - 14f))
+                drawScope.drawCircle(color = Color(0xFFFACC15), radius = 10f + pustulePulse, center = Offset(x + 18f, y + 8f))
+                drawScope.drawCircle(color = Color(0xFFFEF08A), radius = 6f, center = Offset(x - 4f, y + 16f))
             }
 
             EnemyType.BOSS_BIOFILME_APARELHO -> {
-                // Braces biofilm monster with metal wire frame
+                // Braces biofilm monster with metal wire frame & electric sparks
                 drawScope.drawRoundRect(
                     color = hitColor,
                     topLeft = Offset(x - enemy.radius, y - enemy.radius),
@@ -1043,10 +1169,29 @@ object DentalCanvasRenderer {
                 )
                 drawScope.drawLine(color = Color(0xFFE2E8F0), start = Offset(x - 34f, y), end = Offset(x + 34f, y), strokeWidth = 6f)
                 drawScope.drawLine(color = Color(0xFFE2E8F0), start = Offset(x, y - 34f), end = Offset(x, y + 34f), strokeWidth = 6f)
+                // Metal brackets at corners
+                drawScope.drawRect(color = Color(0xFF38BDF8), topLeft = Offset(x - 28f, y - 28f), size = Size(10f, 10f))
+                drawScope.drawRect(color = Color(0xFF38BDF8), topLeft = Offset(x + 18f, y - 28f), size = Size(10f, 10f))
+                drawScope.drawRect(color = Color(0xFF38BDF8), topLeft = Offset(x - 28f, y + 18f), size = Size(10f, 10f))
+                drawScope.drawRect(color = Color(0xFF38BDF8), topLeft = Offset(x + 18f, y + 18f), size = Size(10f, 10f))
             }
 
             EnemyType.BOSS_TARTARO_TITANICO -> {
-                // The ultimate stone titan
+                // The ultimate stone titan with optional Stone Shield
+                if (enemy.skillDuration > 0f) { // Stone shield active
+                    drawScope.drawCircle(
+                        color = Color(0x66CBD5E1),
+                        radius = enemy.radius + 14f,
+                        center = Offset(x, y)
+                    )
+                    drawScope.drawCircle(
+                        color = Color(0xFFF59E0B),
+                        radius = enemy.radius + 14f,
+                        center = Offset(x, y),
+                        style = Stroke(width = 4f)
+                    )
+                }
+
                 drawScope.drawRoundRect(
                     color = hitColor,
                     topLeft = Offset(x - enemy.radius, y - enemy.radius),
@@ -1164,6 +1309,42 @@ object DentalCanvasRenderer {
         y: Float,
         time: Float
     ) {
+        if (p.isEnemyProjectile) {
+            val rad = p.radius.coerceAtLeast(10f)
+            val pulse = (sin((time * 18f).toDouble()) * 3f).toFloat()
+
+            // Outer danger aura ring
+            drawScope.drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color(0xFFEF4444), Color(0xFFF97316), Color.Transparent),
+                    center = Offset(x, y),
+                    radius = rad * 2.2f
+                ),
+                radius = rad * 2.2f + pulse,
+                center = Offset(x, y)
+            )
+            // Fiery speed trail
+            drawScope.drawLine(
+                color = Color(0xAAEF4444),
+                start = Offset(x - p.vx * 0.08f, y - p.vy * 0.08f),
+                end = Offset(x, y),
+                strokeWidth = rad * 1.6f
+            )
+            // Main projectile sphere
+            drawScope.drawCircle(
+                color = Color(0xFFDC2626),
+                radius = rad,
+                center = Offset(x, y)
+            )
+            // Hot yellow acidic center
+            drawScope.drawCircle(
+                color = Color(0xFFFDE047),
+                radius = rad * 0.5f,
+                center = Offset(x - 2f, y - 2f)
+            )
+            return
+        }
+
         // Visual enhancements by level & evolution!
         if (p.isEvolved) {
             val pulseRad = p.radius * 1.5f + (sin((time * 12f).toDouble()) * 4f).toFloat()

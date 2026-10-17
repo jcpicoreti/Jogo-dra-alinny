@@ -274,9 +274,9 @@ fun CharacterCard(
                         val conditionText = when (charItem) {
                             CharacterId.LORENZO -> "Elimine 1.000 germes (Atual: ${meta?.totalGermsEliminated ?: 0}/1.000)"
                             CharacterId.RAYNARA -> "Vença a Fase 1 e derrote a Cárie Gigante!"
-                            CharacterId.JULIO -> "Vença a Fase 5 e derrote o Tártaro Titânico!"
+                            CharacterId.JULIO -> "Vença a Fase 2 e derrote o Tártaro Titânico!"
                             CharacterId.RICK -> "Colete 500 itens de higiene bucal (Atual: ${meta?.totalLootCollected ?: 0}/500)"
-                            CharacterId.BART -> "Faça uma Fusão Lendária (ex: Escova Ultrassônica ou Fio Laser)"
+                            CharacterId.BART -> "Faça qualquer Fusão Lendária durante a partida!"
                             else -> ""
                         }
                         Text(

@@ -595,6 +595,129 @@ fun LevelUpOverlay(
 }
 
 @Composable
+fun ItemIconBadge(option: LevelUpOption) {
+    val (symbol, badgeColor, borderColor) = when (option) {
+        is LevelUpOption.NewWeapon -> {
+            val sym = when (option.weaponType) {
+                WeaponType.ESCOVA_DENTE -> "🪥"
+                WeaponType.FIO_DENTAL -> "🧵"
+                WeaponType.JATO_BICARBONATO -> "🌊"
+                WeaponType.BROCA_ODONTO -> "🔩"
+                WeaponType.ENXAGUANTE_AURA -> "🧴"
+                WeaponType.LUZ_FOTOPOLIMERIZADORA -> "🔦"
+                WeaponType.PASTA_EXPLOSIVA -> "💣"
+                WeaponType.ESPELHO_CLINICO -> "🪞"
+                WeaponType.SERINGA_ANESTESICA -> "💉"
+                WeaponType.SUGADOR_SALIVA -> "🌪️"
+                WeaponType.CURETA_GRACEY -> "🗡️"
+                WeaponType.SPRAY_CLOREXIDINA -> "💨"
+                WeaponType.FITA_EXPANSIVA -> "🎗️"
+                WeaponType.ULTRASSOM_ODONTO -> "🔊"
+                WeaponType.PINCA_CIRURGICA -> "🦀"
+            }
+            Triple(sym, Color(0xFF0284C7), Color(0xFF38BDF8))
+        }
+        is LevelUpOption.UpgradeWeapon -> {
+            val sym = when (option.weapon.type) {
+                WeaponType.ESCOVA_DENTE -> "🪥"
+                WeaponType.FIO_DENTAL -> "🧵"
+                WeaponType.JATO_BICARBONATO -> "🌊"
+                WeaponType.BROCA_ODONTO -> "🔩"
+                WeaponType.ENXAGUANTE_AURA -> "🧴"
+                WeaponType.LUZ_FOTOPOLIMERIZADORA -> "🔦"
+                WeaponType.PASTA_EXPLOSIVA -> "💣"
+                WeaponType.ESPELHO_CLINICO -> "🪞"
+                WeaponType.SERINGA_ANESTESICA -> "💉"
+                WeaponType.SUGADOR_SALIVA -> "🌪️"
+                WeaponType.CURETA_GRACEY -> "🗡️"
+                WeaponType.SPRAY_CLOREXIDINA -> "💨"
+                WeaponType.FITA_EXPANSIVA -> "🎗️"
+                WeaponType.ULTRASSOM_ODONTO -> "🔊"
+                WeaponType.PINCA_CIRURGICA -> "🦀"
+            }
+            Triple(sym, Color(0xFF0369A1), Color(0xFF0EA5E9))
+        }
+        is LevelUpOption.NewPassive -> {
+            val sym = when (option.passiveType) {
+                PassiveType.PASTA_FLUOR -> "✨"
+                PassiveType.ESPELHO_PRECISAO -> "🎯"
+                PassiveType.FIO_EXTRA_FORTE -> "📏"
+                PassiveType.ENXAGUANTE_MENTA -> "⏱️"
+                PassiveType.MASCARA_CIRURGICA -> "😷"
+                PassiveType.LUVAS_LATEX -> "🧤"
+                PassiveType.PASTILHA_REVELADORA -> "🧲"
+                PassiveType.VITAMINA_C -> "🍊"
+                PassiveType.OCULOS_PROTECAO -> "🥽"
+                PassiveType.RESINA_COMPOSTA -> "💎"
+                PassiveType.SELANTE_FOSSULAS -> "🛡️"
+                PassiveType.AVENTAL_CHUMBO -> "🦺"
+                PassiveType.GEL_XILITOL -> "🍬"
+                PassiveType.MATRIZ_ACO -> "⛓️"
+                PassiveType.EXTRATO_PROPOLIS -> "🍯"
+            }
+            Triple(sym, Color(0xFF047857), Color(0xFF10B981))
+        }
+        is LevelUpOption.UpgradePassive -> {
+            val sym = when (option.passive.type) {
+                PassiveType.PASTA_FLUOR -> "✨"
+                PassiveType.ESPELHO_PRECISAO -> "🎯"
+                PassiveType.FIO_EXTRA_FORTE -> "📏"
+                PassiveType.ENXAGUANTE_MENTA -> "⏱️"
+                PassiveType.MASCARA_CIRURGICA -> "😷"
+                PassiveType.LUVAS_LATEX -> "🧤"
+                PassiveType.PASTILHA_REVELADORA -> "🧲"
+                PassiveType.VITAMINA_C -> "🍊"
+                PassiveType.OCULOS_PROTECAO -> "🥽"
+                PassiveType.RESINA_COMPOSTA -> "💎"
+                PassiveType.SELANTE_FOSSULAS -> "🛡️"
+                PassiveType.AVENTAL_CHUMBO -> "🦺"
+                PassiveType.GEL_XILITOL -> "🍬"
+                PassiveType.MATRIZ_ACO -> "⛓️"
+                PassiveType.EXTRATO_PROPOLIS -> "🍯"
+            }
+            Triple(sym, Color(0xFF065F46), Color(0xFF34D399))
+        }
+        is LevelUpOption.EvolveWeapon -> {
+            val sym = when (option.evolution) {
+                EvolutionType.ESCOVA_ULTRASSONICA -> "⚡🪥"
+                EvolutionType.FIO_LASER_TITANIO -> "⚡🧵"
+                EvolutionType.TSUNAMI_BICARBONATO -> "🌊💧"
+                EvolutionType.BROCA_INDELAVEL -> "⚡🔩"
+                EvolutionType.VENTANIA_CRIOGENICA -> "❄️🧴"
+                EvolutionType.RAIO_SOLAR_ODONTO -> "☀️🔦"
+                EvolutionType.BOMBARDEIO_XILITOL -> "💥💣"
+                EvolutionType.ESPELHO_PRISMATICO -> "🌈🪞"
+                EvolutionType.NEBULIZADOR_CIRURGICO -> "🌫️💉"
+                EvolutionType.VORTEX_GRAVITACIONAL -> "🌌🌪️"
+                EvolutionType.GUILHOTINA_PERIODONTAL -> "⚔️🗡️"
+                EvolutionType.NEVOA_BIOATIVA -> "🍯💨"
+                EvolutionType.REDE_CONTENCAO_TITANIO -> "🕸️🎗️"
+                EvolutionType.EMISSOR_CAVITACAO -> "🔊💥"
+                EvolutionType.GARRA_EXTRATORA_PESADA -> "🦾🦀"
+            }
+            Triple(sym, Color(0xFFB45309), Color(0xFFF59E0B))
+        }
+        is LevelUpOption.HealthBonus -> Triple("🍎", Color(0xFFB91C1C), Color(0xFFEF4444))
+        is LevelUpOption.CoinBonus -> Triple("💰", Color(0xFFA16207), Color(0xFFFBBF24))
+    }
+
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(badgeColor.copy(alpha = 0.5f), badgeColor.copy(alpha = 0.15f))
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
+            .border(1.5.dp, borderColor, RoundedCornerShape(12.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(symbol, fontSize = 22.sp)
+    }
+}
+
+@Composable
 fun LevelUpChoiceCard(option: LevelUpOption, onClick: () -> Unit) {
     val isEvolution = option is LevelUpOption.EvolveWeapon
     val cardColor = if (isEvolution) Color(0xFF065F46) else Color(0xFF1E293B)
@@ -628,32 +751,8 @@ fun LevelUpChoiceCard(option: LevelUpOption, onClick: () -> Unit) {
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Icon (Material Design with styling)
-                val iconData: Pair<androidx.compose.ui.graphics.vector.ImageVector, Color> = when (option) {
-                    is LevelUpOption.NewWeapon -> Pair(Icons.Default.Info, Color(0xFF3B82F6))
-                    is LevelUpOption.UpgradeWeapon -> Pair(Icons.Default.KeyboardArrowUp, Color(0xFF38BDF8))
-                    is LevelUpOption.NewPassive -> Pair(Icons.Default.Info, Color(0xFF10B981))
-                    is LevelUpOption.UpgradePassive -> Pair(Icons.Default.Star, Color(0xFF34D399))
-                    is LevelUpOption.EvolveWeapon -> Pair(Icons.Default.Warning, Color(0xFFF59E0B))
-                    is LevelUpOption.HealthBonus -> Pair(Icons.Default.Favorite, Color(0xFFEF4444))
-                    is LevelUpOption.CoinBonus -> Pair(Icons.Default.ShoppingCart, Color(0xFFFBBF24))
-                }
-                
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .background(iconData.second.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-                        .border(1.dp, iconData.second, RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = iconData.first,
-                        contentDescription = "Icon",
-                        tint = iconData.second,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(10.dp))
+                ItemIconBadge(option = option)
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     val title = when (option) {

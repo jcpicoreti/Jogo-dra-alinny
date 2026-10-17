@@ -1,21 +1,30 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Project ProGuard / R8 Rules for Release Builds
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Room Database Keep Rules
+-keep class androidx.room.RoomDatabase
+-dontwarn androidx.room.paging.**
+-keepclassmembers class * extends androidx.room.RoomDatabase {
+    public <init>();
+}
+-keep class * extends androidx.room.RoomDatabase
+-keep class com.example.data.local.** { *; }
+-keepclassmembers class com.example.data.local.** { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Game Data Models & Moshi JSON Keep Rules
+-keep class com.example.data.model.** { *; }
+-keepclassmembers class com.example.data.model.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Preserve Enums
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+
+# Preserve ViewModels
+-keep class * extends androidx.lifecycle.ViewModel
+-keepclassmembers class * extends androidx.lifecycle.ViewModel {
+    public <init>(...);
+}
+
+# Preserve Annotations & Reflection Attributes for Room/Moshi
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod,SourceFile,LineNumberTable

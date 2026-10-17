@@ -645,8 +645,8 @@ enum class LootType(
     val scoreValue: Int,
     val color: Long
 ) {
-    FLUOR_XP("Gota de Flúor", xpValue = 10, healAmount = 0f, scoreValue = 10, color = 0xFF38BDF8),
-    CRISTAL_XILITOL("Cristal de Xilitol", xpValue = 50, healAmount = 0f, scoreValue = 50, color = 0xFF22C55E),
+    FLUOR_XP("Gota de Flúor", xpValue = 14, healAmount = 0f, scoreValue = 10, color = 0xFF38BDF8),
+    CRISTAL_XILITOL("Cristal de Xilitol", xpValue = 65, healAmount = 0f, scoreValue = 50, color = 0xFF22C55E),
     PASTILHA_VACUUM("Ímã Revelador", xpValue = 20, healAmount = 0f, scoreValue = 100, color = 0xFFEC4899),
     MACA_HEAL("Maçã Crocante", xpValue = 0, healAmount = 40f, scoreValue = 20, color = 0xFF10B981),
     CAPSULA_ANALGESICO("Cápsula Analgésica", xpValue = 0, healAmount = 85f, scoreValue = 60, color = 0xFFF43F5E),
@@ -700,7 +700,8 @@ enum class EnemyType(
         baseSpeed = 1.25f,
         baseDamage = 15f,
         radius = 18f,
-        colorHex = 0xFFC084FC // Roxo brilhante
+        colorHex = 0xFFC084FC, // Roxo brilhante
+        isShooter = true
     ),
     TARTARO_MINION(
         displayName = "Casca de Tártaro Duro",
@@ -719,6 +720,53 @@ enum class EnemyType(
         radius = 17f,
         colorHex = 0xFFF43F5E, // Rosa avermelhado
         isShooter = true
+    ),
+    FUNGOS_CANDIDA(
+        displayName = "Fungo Cândida Albicans",
+        baseHp = 45f,
+        baseSpeed = 0.95f,
+        baseDamage = 11f,
+        radius = 19f,
+        colorHex = 0xFF06B6D4, // Ciano esporo luminoso
+        isShooter = true,
+        xpDrop = LootType.FLUOR_XP
+    ),
+    VIRUS_HERPES(
+        displayName = "Vírus Herpes Bucal",
+        baseHp = 18f,
+        baseSpeed = 1.95f,
+        baseDamage = 9f,
+        radius = 13f,
+        colorHex = 0xFFEC4899, // Rosa choque néon ultra rápido
+        xpDrop = LootType.FLUOR_XP
+    ),
+    BACTERIA_CARIE_RADICULAR(
+        displayName = "Cárie de Raiz Petrificada",
+        baseHp = 140f,
+        baseSpeed = 0.60f,
+        baseDamage = 20f,
+        radius = 26f,
+        colorHex = 0xFF451A03, // Castanho escuro encouraçado
+        xpDrop = LootType.CRISTAL_XILITOL
+    ),
+    GERME_INFLAMATORIO(
+        displayName = "Germe Inflamatório Cuspidor",
+        baseHp = 38f,
+        baseSpeed = 0.80f,
+        baseDamage = 12f,
+        radius = 18f,
+        colorHex = 0xFFEA580C, // Laranja inflamado
+        isShooter = true,
+        xpDrop = LootType.FLUOR_XP
+    ),
+    BACILO_ANAEROBIO(
+        displayName = "Bacilo Anaeróbio Fétido",
+        baseHp = 60f,
+        baseSpeed = 1.15f,
+        baseDamage = 14f,
+        radius = 21f,
+        colorHex = 0xFF65A30D, // Verde oliva
+        xpDrop = LootType.FLUOR_XP
     ),
     // Pre-Boss Elite Enemies (Drop Level-Up Mega Chests!)
     ELITE_SUPER_BACTERIA(
@@ -816,6 +864,11 @@ data class EnemyInstance(
     val isBoss: Boolean = false,
     var flashHitTimer: Float = 0f,
     var attackCooldown: Float = 0f,
+    var skillTimer: Float = 0f,
+    var skillState: Int = 0,
+    var chargeVx: Float = 0f,
+    var chargeVy: Float = 0f,
+    var skillDuration: Float = 0f,
     var isDead: Boolean = false
 )
 
@@ -898,7 +951,8 @@ enum class ClinicUpgradeType(
     MOBILIDADE_AGIL("speed", "Sapatos Antiderrapantes", "Aumenta a velocidade de corrida pela clínica.", 5, 80, 1.5f, "+6% Velocidade"),
     IMA_HIGIENICO("magnet", "Aspirador de Saliva", "Aumenta o raio de atração de gotas de flúor e loot.", 5, 90, 1.5f, "+20% Raio"),
     RECARGA_RAPIDA("cooldown", "Esterilização Rápida", "Reduz o tempo de recarga de todos os poderes.", 5, 150, 2.0f, "-5% Recarga"),
-    SORRISO_DE_OURO("gold", "Dentes de Ouro", "Aumenta a quantidade de moedas obtidas por partida.", 5, 100, 1.7f, "+25% Moedas")
+    SORRISO_DE_OURO("gold", "Dentes de Ouro", "Aumenta a quantidade de moedas obtidas por partida.", 5, 100, 1.7f, "+25% Moedas"),
+    ESTUDO_ODONTOLOGICO("xp", "Conhecimento Clínico", "Aumenta o ganho de experiência (XP) em todas as fases.", 5, 110, 1.6f, "+10% Ganho de XP")
 }
 
 enum class ObstacleType(

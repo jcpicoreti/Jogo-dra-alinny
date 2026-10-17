@@ -162,6 +162,7 @@ fun UpgradeItemCard(
                         ClinicUpgradeType.IMA_HIGIENICO -> "🧲"
                         ClinicUpgradeType.RECARGA_RAPIDA -> "⏱️"
                         ClinicUpgradeType.SORRISO_DE_OURO -> "🦷"
+                        ClinicUpgradeType.ESTUDO_ODONTOLOGICO -> "📚"
                     }
 
                     Surface(

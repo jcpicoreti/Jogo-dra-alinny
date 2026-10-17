@@ -70,6 +70,7 @@ class GameEngine(
     private val magnetBonus: Float
     private val cooldownReduction: Float
     private val goldMultiplier: Float
+    private val xpMultiplier: Float
 
     init {
         var hp = 0f
@@ -78,6 +79,7 @@ class GameEngine(
         var mag = 0f
         var cd = 1f
         var gold = 1f
+        var xp = 1f
 
         clinicUpgrades.forEach { u ->
             when (u.id) {
@@ -87,6 +89,7 @@ class GameEngine(
                 ClinicUpgradeType.IMA_HIGIENICO.id -> mag += u.level * 25f
                 ClinicUpgradeType.RECARGA_RAPIDA.id -> cd *= (1f - u.level * 0.05f)
                 ClinicUpgradeType.SORRISO_DE_OURO.id -> gold += u.level * 0.25f
+                ClinicUpgradeType.ESTUDO_ODONTOLOGICO.id -> xp += u.level * 0.10f
             }
         }
         hpBonus = hp
@@ -95,6 +98,7 @@ class GameEngine(
         magnetBonus = mag
         cooldownReduction = cd
         goldMultiplier = gold
+        xpMultiplier = xp
 
         val startMaxHp = characterId.baseHp + hpBonus
         val startingWeapon = ActiveWeapon(type = characterId.startingWeapon, level = 1)
@@ -330,7 +334,12 @@ class GameEngine(
 
             for (enemy in enemies) {
                 if (enemy.isDead) continue
-                if (enemy.isBoss) currentBoss = enemy
+                if (enemy.isBoss) {
+                    currentBoss = enemy
+                    if (!isFrozen) {
+                        updateBossAI(enemy, dt, newPlayerX, newPlayerY, passiveArmorReduction)
+                    }
+                }
 
                 if (enemy.flashHitTimer > 0f) {
                     enemy.flashHitTimer -= dt
@@ -344,38 +353,53 @@ class GameEngine(
                     val dy = newPlayerY - enemy.y
                     val dist = sqrt(dx * dx + dy * dy)
                     if (dist > 1f) {
-                        if (enemy.type.isShooter && dist < 300f) {
-                            enemy.x += (dx / dist) * (enemy.speed * 10f) * dt
-                            enemy.y += (dy / dist) * (enemy.speed * 10f) * dt
+                        if (enemy.type.isShooter) {
+                            val strafeX = (-dy / dist) * sin((newGameTime * 3f + enemy.id).toDouble()).toFloat() * 25f
+                            val strafeY = (dx / dist) * sin((newGameTime * 3f + enemy.id).toDouble()).toFloat() * 25f
+                            val forwardSpeed = if (dist < 100f) enemy.speed * 15f else enemy.speed * 42f
+                            enemy.x += ((dx / dist) * forwardSpeed + strafeX) * dt
+                            enemy.y += ((dy / dist) * forwardSpeed + strafeY) * dt
                         } else {
                             enemy.x += (dx / dist) * enemy.speed * 60f * dt
                             enemy.y += (dy / dist) * enemy.speed * 60f * dt
                         }
                     }
 
-                    if (dist < (enemy.radius + 18f)) {
-                        if (enemy.attackCooldown <= 0f) {
+                    if (enemy.type.isShooter) {
+                        if (enemy.attackCooldown <= 0f && dist in 10f..550f) {
+                            enemy.attackCooldown = 0.8f // Rapid continuous shoot every 0.8s!
+                            val pDx = (dx / dist)
+                            val pDy = (dy / dist)
+                            soundManager.playSplash()
+                            spawnHitParticles(enemy.x, enemy.y, 4, 0xFFF43F5E)
+                            projectiles.add(
+                                ProjectileInstance(
+                                    id = idGen.incrementAndGet(),
+                                    x = enemy.x,
+                                    y = enemy.y,
+                                    vx = pDx * 380f,
+                                    vy = pDy * 380f,
+                                    damage = enemy.damage * passiveArmorReduction,
+                                    durationRemaining = 5f,
+                                    pierceLeft = 0,
+                                    radius = 14f,
+                                    weaponType = WeaponType.ESCOVA_DENTE,
+                                    isEnemyProjectile = true
+                                )
+                            )
+                        } else if (dist < (enemy.radius + 18f) && enemy.attackCooldown <= 0f) {
                             enemy.attackCooldown = 0.8f
                             var dmg = enemy.damage * passiveArmorReduction
                             if (characterId == CharacterId.JULIO) dmg *= 0.80f
                             damagePlayer(dmg)
                         }
-                    } else if (enemy.type.isShooter && enemy.attackCooldown <= 0f && dist < 350f) {
-                        enemy.attackCooldown = 3.0f // Shoot every 3 seconds
-                        val pDx = (dx / dist)
-                        val pDy = (dy / dist)
-                        projectiles.add(ProjectileInstance(
-                            id = idGen.incrementAndGet(),
-                            x = enemy.x,
-                            y = enemy.y,
-                            vx = pDx * 150f,
-                            vy = pDy * 150f,
-                            damage = enemy.damage * passiveArmorReduction,
-                            durationRemaining = 5f,
-                            pierceLeft = 0,
-                            weaponType = WeaponType.ESCOVA_DENTE,
-                            isEnemyProjectile = true
-                        ))
+                    } else {
+                        if (dist < (enemy.radius + 18f) && enemy.attackCooldown <= 0f) {
+                            enemy.attackCooldown = 0.8f
+                            var dmg = enemy.damage * passiveArmorReduction
+                            if (characterId == CharacterId.JULIO) dmg *= 0.80f
+                            damagePlayer(dmg)
+                        }
                     }
                 }
             }
@@ -1067,19 +1091,47 @@ class GameEngine(
 
         val randVal = Random.nextFloat()
         var type = when (stageId) {
-            StageId.STAGE_1_ESMALTE -> if (randVal < 0.7f) EnemyType.STREPTOCOCCUS else EnemyType.PLACA_AMARELA
-            StageId.STAGE_2_GENGIVA -> if (randVal < 0.6f) EnemyType.ESPIROQUETA else EnemyType.ACIDO_CORROSIVO
-            StageId.STAGE_3_CANAL -> if (randVal < 0.5f) EnemyType.ACIDO_CORROSIVO else EnemyType.TARTARO_MINION
-            StageId.STAGE_4_APARELHO -> if (randVal < 0.5f) EnemyType.PLACA_AMARELA else EnemyType.ESPIROQUETA
-            StageId.STAGE_5_TARTARO -> if (randVal < 0.4f) EnemyType.TARTARO_MINION else EnemyType.ACIDO_CORROSIVO
+            StageId.STAGE_1_ESMALTE -> when {
+                randVal < 0.40f -> EnemyType.STREPTOCOCCUS
+                randVal < 0.70f -> EnemyType.PLACA_AMARELA
+                randVal < 0.88f -> EnemyType.VIRUS_HERPES
+                else -> EnemyType.FUNGOS_CANDIDA
+            }
+            StageId.STAGE_2_GENGIVA -> when {
+                randVal < 0.35f -> EnemyType.ESPIROQUETA
+                randVal < 0.65f -> EnemyType.ACIDO_CORROSIVO
+                randVal < 0.85f -> EnemyType.BACILO_ANAEROBIO
+                else -> EnemyType.FUNGOS_CANDIDA
+            }
+            StageId.STAGE_3_CANAL -> when {
+                randVal < 0.35f -> EnemyType.ACIDO_CORROSIVO
+                randVal < 0.65f -> EnemyType.TARTARO_MINION
+                randVal < 0.85f -> EnemyType.BACTERIA_CARIE_RADICULAR
+                else -> EnemyType.BACILO_ANAEROBIO
+            }
+            StageId.STAGE_4_APARELHO -> when {
+                randVal < 0.35f -> EnemyType.PLACA_AMARELA
+                randVal < 0.65f -> EnemyType.ESPIROQUETA
+                randVal < 0.85f -> EnemyType.VIRUS_HERPES
+                else -> EnemyType.BACILO_ANAEROBIO
+            }
+            StageId.STAGE_5_TARTARO -> when {
+                randVal < 0.30f -> EnemyType.TARTARO_MINION
+                randVal < 0.60f -> EnemyType.BACTERIA_CARIE_RADICULAR
+                randVal < 0.82f -> EnemyType.BACILO_ANAEROBIO
+                else -> EnemyType.ACIDO_CORROSIVO
+            }
             StageId.STAGE_INFINITE -> {
                 val types = EnemyType.values().filter { !it.name.startsWith("BOSS_") && !it.isElite }
                 types.random()
             }
         }
         
-        if (Random.nextFloat() < 0.10f) {
+        val shooterRoll = Random.nextFloat()
+        if (shooterRoll < 0.15f) {
             type = EnemyType.BACTERIA_ATIRADORA
+        } else if (shooterRoll < 0.30f) {
+            type = EnemyType.GERME_INFLAMATORIO
         }
 
         val hpScale = 1f + (gameTime / 180f)
@@ -1097,7 +1149,8 @@ class GameEngine(
                 type = type,
                 speed = type.baseSpeed,
                 damage = type.baseDamage * diffDmg,
-                radius = type.radius
+                radius = type.radius,
+                attackCooldown = if (type.isShooter) 0.3f else 0f
             )
         )
     }
@@ -1142,9 +1195,201 @@ class GameEngine(
         )
     }
 
+    private fun updateBossAI(
+        boss: EnemyInstance,
+        dt: Float,
+        playerX: Float,
+        playerY: Float,
+        armorReduction: Float
+    ) {
+        val dx = playerX - boss.x
+        val dy = playerY - boss.y
+        val dist = sqrt(dx * dx + dy * dy).coerceAtLeast(1f)
+
+        if (boss.skillDuration > 0f) {
+            boss.skillDuration = (boss.skillDuration - dt).coerceAtLeast(0f)
+        }
+        boss.skillTimer -= dt
+
+        when (boss.type) {
+            EnemyType.BOSS_CARIE_GIGANTE -> {
+                if (boss.skillTimer <= 0f) {
+                    boss.skillTimer = 4.2f
+                    soundManager.playBossRoar()
+                    for (i in 0 until 8) {
+                        val angle = Math.toRadians((i * 45f).toDouble()).toFloat()
+                        val vx = cos(angle) * 200f
+                        val vy = sin(angle) * 200f
+                        projectiles.add(
+                            ProjectileInstance(
+                                id = idGen.incrementAndGet(),
+                                x = boss.x,
+                                y = boss.y,
+                                vx = vx,
+                                vy = vy,
+                                damage = boss.damage * armorReduction * 0.8f,
+                                durationRemaining = 4f,
+                                pierceLeft = 0,
+                                radius = 9f,
+                                weaponType = WeaponType.ESCOVA_DENTE,
+                                isEnemyProjectile = true
+                            )
+                        )
+                    }
+                    if (enemies.count { !it.isDead && it.type == EnemyType.STREPTOCOCCUS } < 8) {
+                        for (j in 0 until 2) {
+                            val offsetAng = Random.nextFloat() * 2f * PI.toFloat()
+                            enemies.add(
+                                EnemyInstance(
+                                    id = idGen.incrementAndGet(),
+                                    x = boss.x + cos(offsetAng) * 40f,
+                                    y = boss.y + sin(offsetAng) * 40f,
+                                    hp = EnemyType.STREPTOCOCCUS.baseHp * 1.5f,
+                                    maxHp = EnemyType.STREPTOCOCCUS.baseHp * 1.5f,
+                                    type = EnemyType.STREPTOCOCCUS,
+                                    speed = EnemyType.STREPTOCOCCUS.baseSpeed,
+                                    damage = EnemyType.STREPTOCOCCUS.baseDamage,
+                                    radius = EnemyType.STREPTOCOCCUS.radius
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            EnemyType.BOSS_GENGIVITE -> {
+                if (boss.skillState == 0) {
+                    if (boss.skillTimer <= 0f && dist < 450f) {
+                        boss.skillState = 1
+                        boss.skillDuration = 0.9f
+                        boss.chargeVx = dx / dist
+                        boss.chargeVy = dy / dist
+                        soundManager.playBossRoar()
+                    }
+                } else if (boss.skillState == 1) {
+                    if (boss.skillDuration <= 0f) {
+                        boss.skillState = 2
+                        boss.skillDuration = 0.55f
+                    }
+                } else if (boss.skillState == 2) {
+                    boss.x += boss.chargeVx * 480f * dt
+                    boss.y += boss.chargeVy * 480f * dt
+                    spawnHitParticles(boss.x, boss.y, 2, 0xFFDC2626)
+                    if (boss.skillDuration <= 0f) {
+                        boss.skillState = 0
+                        boss.skillTimer = 4.5f
+                        for (i in 0 until 6) {
+                            val angle = Math.toRadians((i * 60f).toDouble()).toFloat()
+                            projectiles.add(
+                                ProjectileInstance(
+                                    id = idGen.incrementAndGet(),
+                                    x = boss.x,
+                                    y = boss.y,
+                                    vx = cos(angle) * 180f,
+                                    vy = sin(angle) * 180f,
+                                    damage = boss.damage * armorReduction * 0.9f,
+                                    durationRemaining = 3f,
+                                    pierceLeft = 0,
+                                    radius = 8f,
+                                    weaponType = WeaponType.ESCOVA_DENTE,
+                                    isEnemyProjectile = true
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            EnemyType.BOSS_ABCESSO -> {
+                if (boss.skillTimer <= 0f) {
+                    boss.skillTimer = 4.0f
+                    soundManager.playSplash()
+                    val angles = listOf(45f, 135f, 225f, 315f)
+                    for (ang in angles) {
+                        val rad = Math.toRadians(ang.toDouble()).toFloat()
+                        projectiles.add(
+                            ProjectileInstance(
+                                id = idGen.incrementAndGet(),
+                                x = boss.x,
+                                y = boss.y,
+                                vx = cos(rad) * 190f,
+                                vy = sin(rad) * 190f,
+                                damage = boss.damage * armorReduction * 0.85f,
+                                durationRemaining = 5f,
+                                pierceLeft = 0,
+                                radius = 10f,
+                                weaponType = WeaponType.ESCOVA_DENTE,
+                                isEnemyProjectile = true
+                            )
+                        )
+                    }
+                }
+            }
+
+            EnemyType.BOSS_BIOFILME_APARELHO -> {
+                if (boss.skillTimer <= 0f) {
+                    boss.skillTimer = 3.8f
+                    soundManager.playLaser()
+                    val angles = listOf(0f, 90f, 180f, 270f)
+                    for (ang in angles) {
+                        val rad = Math.toRadians(ang.toDouble()).toFloat()
+                        projectiles.add(
+                            ProjectileInstance(
+                                id = idGen.incrementAndGet(),
+                                x = boss.x,
+                                y = boss.y,
+                                vx = cos(rad) * 230f,
+                                vy = sin(rad) * 230f,
+                                damage = boss.damage * armorReduction * 0.85f,
+                                durationRemaining = 4f,
+                                pierceLeft = 0,
+                                radius = 7f,
+                                weaponType = WeaponType.ESCOVA_DENTE,
+                                isEnemyProjectile = true
+                            )
+                        )
+                    }
+                }
+            }
+
+            EnemyType.BOSS_TARTARO_TITANICO -> {
+                if (boss.skillTimer <= 0f) {
+                    boss.skillTimer = 5.5f
+                    boss.skillDuration = 3.0f
+                    shakeIntensity = 14f
+                    soundManager.playBossRoar()
+                    for (i in 0 until 10) {
+                        val angle = Math.toRadians((i * 36f).toDouble()).toFloat()
+                        projectiles.add(
+                            ProjectileInstance(
+                                id = idGen.incrementAndGet(),
+                                x = boss.x,
+                                y = boss.y,
+                                vx = cos(angle) * 210f,
+                                vy = sin(angle) * 210f,
+                                damage = boss.damage * armorReduction * 0.9f,
+                                durationRemaining = 4f,
+                                pierceLeft = 0,
+                                radius = 9f,
+                                weaponType = WeaponType.ESCOVA_DENTE,
+                                isEnemyProjectile = true
+                            )
+                        )
+                    }
+                }
+            }
+
+            else -> {}
+        }
+    }
+
     private fun applyDamageToEnemy(enemy: EnemyInstance, damage: Float, isCrit: Boolean) {
         if (enemy.isDead) return
-        enemy.hp -= damage
+        var actualDamage = damage
+        if (enemy.type == EnemyType.BOSS_TARTARO_TITANICO && enemy.skillDuration > 0f) {
+            actualDamage *= 0.40f // 60% reduction during stone shield
+        }
+        enemy.hp -= actualDamage
         enemy.flashHitTimer = 0.12f
 
         damageNumbers.add(
@@ -1247,8 +1492,9 @@ class GameEngine(
         when (loot.type) {
             LootType.FLUOR_XP, LootType.CRISTAL_XILITOL -> {
                 soundManager.playGemPickup()
-                val xpBonus = if (characterId == CharacterId.DRA_ALINNY) 1.15f else 1.0f
-                addXp((loot.type.xpValue * xpBonus).toInt())
+                val characterXpBonus = if (characterId == CharacterId.DRA_ALINNY) 1.15f else 1.0f
+                val totalXpMult = characterXpBonus * xpMultiplier
+                addXp((loot.type.xpValue * totalXpMult).toInt())
             }
             LootType.MACA_HEAL, LootType.CAPSULA_ANALGESICO -> {
                 soundManager.playSplash()
@@ -1298,7 +1544,7 @@ class GameEngine(
     }
 
     private fun calculateXpRequirement(lvl: Int): Int {
-        return (35 + lvl * 25 + (lvl * lvl * 4))
+        return (25 + lvl * 18 + (lvl * lvl * 2))
     }
 
     private fun triggerLevelUp(newLevel: Int, currentXp: Int, requiredXp: Int) {
@@ -1489,6 +1735,7 @@ class GameEngine(
                 }
                 onItemDiscovered?.invoke(option.evolution.name)
                 onFusionTriggered?.invoke(option.evolution)
+                onAchievementTriggered?.invoke("dual_evolution") // Triggers legendary fusion achievement & unlocks Bart!
                 if (option.evolution == EvolutionType.ESCOVA_ULTRASSONICA) {
                     onAchievementTriggered?.invoke("evolve_brush")
                 }

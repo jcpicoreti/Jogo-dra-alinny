@@ -16,8 +16,8 @@ android {
     applicationId = "com.aistudio.dralinny.vs.germes"
     minSdk = 24
     targetSdk = 36
-    versionCode = 2
-    versionName = "1.01"
+    versionCode = 3
+    versionName = "1.02"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -84,6 +84,7 @@ dependencies {
   implementation(libs.androidx.compose.ui.graphics)
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.core.ktx)
+  implementation(libs.androidx.fragment.ktx)
   // implementation(libs.androidx.datastore.preferences)
   implementation(libs.androidx.lifecycle.runtime.compose)
   implementation(libs.androidx.lifecycle.runtime.ktx)

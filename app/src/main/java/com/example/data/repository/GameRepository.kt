@@ -131,8 +131,18 @@ class GameRepository(context: Context) {
         if (updateAchievementProgress("collect_loot_100", newMeta.totalLootCollected)) newlyUnlocked.add("collect_loot_100")
         if (updateAchievementProgress("collect_loot_500", newMeta.totalLootCollected)) newlyUnlocked.add("collect_loot_500")
 
-        if (isVictory && stage == StageId.STAGE_4_APARELHO) {
-            if (unlockAchievement("stage_aparelho")) newlyUnlocked.add("stage_aparelho")
+        if (isVictory) {
+            if (stage == StageId.STAGE_1_ESMALTE) {
+                if (unlockAchievement("boss_carie")) newlyUnlocked.add("boss_carie")
+                unlockCharacter(CharacterId.RAYNARA)
+            }
+            if (stage == StageId.STAGE_2_GENGIVA) {
+                if (unlockAchievement("boss_tartaro")) newlyUnlocked.add("boss_tartaro")
+                unlockCharacter(CharacterId.JULIO)
+            }
+            if (stage == StageId.STAGE_4_APARELHO) {
+                if (unlockAchievement("stage_aparelho")) newlyUnlocked.add("stage_aparelho")
+            }
         }
         if (stage == StageId.STAGE_INFINITE && timeSeconds >= 720) {
             if (unlockAchievement("infinite_survival")) newlyUnlocked.add("infinite_survival")
